@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+@theme {
+  /* Powder Blue — dominan 60% */
+  --color-blue-50: #F4FAFD;
+  --color-blue-100: #EEF6FB;
+  --color-blue-200: #DCEBF5;
+  --color-blue-300: #B8D8EA;
+  --color-blue-400: #8FBEDC;
+
+  /* Midnight Navy — sekunder 30% */
+  --color-navy-500: #3A5680;
+  --color-navy-600: #24406B;
+  --color-navy-700: #16294F;
+  --color-navy-800: #0F1E3D;
+  --color-navy-900: #0A1428;
+
+  /* Sunflower Yellow — aksen 10% */
+  --color-yellow-300: #FFE066;
+  --color-yellow-400: #FFD23F;
+  --color-yellow-500: #FFC914;
+  --color-yellow-600: #E6B000;
+
+  /* Semantik */
+  --color-success: #2E9E6B;
+  --color-danger: #E05252;
+  --color-info: #4A90D9;
+
+  --font-heading: "Plus Jakarta Sans", sans-serif;
+  --font-body: "Inter", sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background-color: var(--color-blue-50);
+  color: var(--color-navy-800);
+}
+
+/* strip berjalan untuk landing */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 24s linear infinite;
+}
+@keyframes marquee-reverse {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+.animate-marquee-reverse {
+  animation: marquee-reverse 28s linear infinite;
+}
+
+/* latar pola titik halus pengganti gradient blob */
+.bg-dots {
+  background-image: radial-gradient(#b8d8ea 1.3px, transparent 1.3px);
+  background-size: 20px 20px;
+}
+
+/* rail horizontal tanpa scrollbar */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* elemen melayang ala komposisi Broccoli */
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.animate-float { animation: float-y 5s ease-in-out infinite; }
+.animate-float-delay { animation: float-y 6s ease-in-out 1.2s infinite; }
+.animate-float-slow { animation: float-y 7s ease-in-out 0.6s infinite; }
+
+/* liquid shape: blob yang bermetamorfosis pelan */
+@keyframes blob-morph {
+  0%, 100% { border-radius: 60% 40% 55% 45% / 50% 60% 40% 50%; }
+  25% { border-radius: 45% 55% 40% 60% / 60% 45% 55% 40%; }
+  50% { border-radius: 55% 45% 60% 40% / 40% 55% 45% 60%; }
+  75% { border-radius: 40% 60% 45% 55% / 55% 40% 60% 45%; }
+}
+.blob-morph { animation: blob-morph 10s ease-in-out infinite; }
+.blob-morph-slow { animation: blob-morph 16s ease-in-out 2s infinite; }
