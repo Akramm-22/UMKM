@@ -5,7 +5,8 @@ import {
   MapPin, LayoutGrid, Radar, ShieldCheck, Building2, TriangleAlert, SlidersHorizontal,
   LogOut, Search, Bell, TrendingUp, TrendingDown, Hourglass, BadgePercent, Footprints,
   Star, Check, X, ChevronRight, UtensilsCrossed, Wrench, ShoppingBasket, Megaphone,
-  Users, BadgeCheck, Flag, Map as MapIcon, Save, RotateCcw, EyeOff, Store,
+  Users, BadgeCheck, Flag, Map as MapIcon, Save, RotateCcw, EyeOff, Store, Home,
+  PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -87,6 +88,7 @@ export default function AdminDashboard() {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('semua');
   const [notifOpen, setNotifOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [settings, setSettings] = useState({ email: true, autoPub: false, strict: true, sla: 24, radius: 2 });
   const [saved, setSaved] = useState(false);
 
@@ -219,21 +221,37 @@ export default function AdminDashboard() {
       </div>
 
       {/* ═══ Sidebar navy ═══ */}
-      <aside className="hidden lg:flex flex-col w-60 shrink-0 bg-navy-800 text-blue-300 m-3 rounded-3xl p-5 relative overflow-hidden">
+      <aside className={`hidden lg:flex flex-col shrink-0 bg-navy-800 text-blue-300 m-3 rounded-3xl p-5 relative overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'w-20' : 'w-60'}`}>
         <div className="blob-morph absolute -top-16 -right-16 w-48 h-48 bg-yellow-500/10 pointer-events-none" aria-hidden="true" />
-        <Link to="/" className="relative flex items-center gap-2 font-heading font-extrabold text-lg text-blue-50">
-          <span className="bg-yellow-500 text-navy-800 p-1.5 rounded-full"><MapPin size={16} /></span>
-          PesanLokal<span className="text-yellow-500">.</span>
-        </Link>
-        <p className="relative text-[10px] font-bold uppercase tracking-widest text-navy-500 mt-1.5 ml-0.5">Panel Admin</p>
+        <div className="relative flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2 font-heading font-extrabold text-lg text-blue-50 min-w-0">
+            <span className="bg-yellow-500 text-navy-800 p-1.5 rounded-full shrink-0"><MapPin size={16} /></span>
+            {!sidebarCollapsed && <span className="truncate">PesanLokal<span className="text-yellow-500">.</span></span>}
+          </Link>
+          <button
+            type="button"
+            onClick={() => setSidebarCollapsed((v) => !v)}
+            className="ml-auto rounded-lg p-2 text-blue-300 hover:bg-navy-700 hover:text-blue-50 transition-colors"
+            aria-label={sidebarCollapsed ? 'Buka sidebar' : 'Ringkas sidebar'}
+            title={sidebarCollapsed ? 'Buka sidebar' : 'Ringkas sidebar'}
+          >
+            {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+          </button>
+        </div>
+        {!sidebarCollapsed && <p className="relative text-[10px] font-bold uppercase tracking-widest text-navy-500 mt-1.5 ml-0.5">Panel Admin</p>}
 
         <nav className="relative mt-8 space-y-1.5">
           {NAV.map((n) => {
             const active = view === n.key;
             if (n.to) {
               return (
-                <Link key={n.key} to={n.to} className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-navy-700/70 hover:text-blue-50">
-                  <n.icon size={17} /> {n.label}
+                <Link
+                  key={n.key}
+                  to={n.to}
+                  className={`w-full flex items-center px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-navy-700/70 hover:text-blue-50 ${sidebarCollapsed ? 'justify-center gap-0' : 'gap-3'}`}
+                  title={sidebarCollapsed ? n.label : undefined}
+                >
+                  <n.icon size={17} /> {!sidebarCollapsed && n.label}
                 </Link>
               );
             }
@@ -242,17 +260,18 @@ export default function AdminDashboard() {
                 key={n.key}
                 type="button"
                 onClick={() => setView(n.key)}
-                className={`relative w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                className={`relative w-full flex items-center px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                   active ? 'text-navy-800' : 'hover:bg-navy-700/70 hover:text-blue-50'
-                }`}
+                } ${sidebarCollapsed ? 'justify-center gap-0' : 'gap-3'}`}
+                title={sidebarCollapsed ? n.label : undefined}
               >
                 {active && (
                   <motion.span layoutId="nav-pill" className="absolute inset-0 bg-yellow-500 rounded-xl shadow-lg shadow-yellow-500/20" transition={{ type: 'spring', stiffness: 400, damping: 32 }} />
                 )}
-                <span className="relative flex items-center gap-3 w-full">
+                <span className={`relative flex items-center w-full ${sidebarCollapsed ? 'justify-center' : 'gap-3'}`}>
                   <n.icon size={17} />
-                  {n.label}
-                  {n.badge ? (
+                  {!sidebarCollapsed && n.label}
+                  {n.badge && !sidebarCollapsed ? (
                     <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-md ${active ? 'bg-navy-800 text-yellow-500' : 'bg-yellow-500 text-navy-800'}`}>
                       {n.badge}
                     </span>
@@ -264,18 +283,32 @@ export default function AdminDashboard() {
         </nav>
 
         <div className="relative mt-auto pt-4 border-t border-navy-600">
-          <div className="flex items-center gap-2.5">
+          <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-2.5'}`}>
             <span className="w-9 h-9 rounded-full bg-blue-300 text-navy-800 font-heading font-extrabold text-sm flex items-center justify-center">
               {(user?.name ?? 'Admin').slice(0, 1)}
             </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-blue-50 truncate">{user?.name ?? 'Admin Demo'}</p>
-              <p className="text-[10px] text-navy-500">Administrator</p>
-            </div>
-            <button onClick={doLogout} className="text-navy-500 hover:text-danger transition-colors" aria-label="Keluar">
+            {!sidebarCollapsed && (
+              <>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-blue-50 truncate">{user?.name ?? 'Admin Demo'}</p>
+                  <p className="text-[10px] text-navy-500">Administrator</p>
+                </div>
+                <button onClick={doLogout} className="text-navy-500 hover:text-danger transition-colors" aria-label="Keluar">
+                  <LogOut size={16} />
+                </button>
+              </>
+            )}
+          </div>
+          {sidebarCollapsed && (
+            <button
+              onClick={doLogout}
+              className="mt-3 w-full flex items-center justify-center text-navy-500 hover:text-danger transition-colors"
+              aria-label="Keluar"
+              title="Keluar"
+            >
               <LogOut size={16} />
             </button>
-          </div>
+          )}
         </div>
       </aside>
 
@@ -285,6 +318,12 @@ export default function AdminDashboard() {
           {/* topbar */}
           <motion.div {...rise(0)} className="flex flex-wrap items-center gap-x-4 gap-y-3">
             <div className="min-w-0 flex-1">
+              <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-navy-500 font-semibold mb-1">
+                <Home size={12} />
+                <span>Admin</span>
+                <ChevronRight size={12} />
+                <span className="text-navy-700">{NAV.find((n) => n.key === view)?.label ?? 'Ringkasan'}</span>
+              </div>
               <h1 className="font-heading font-extrabold text-lg sm:text-xl truncate">{TITLES[view].h}</h1>
               <p className="text-xs text-navy-500 mt-0.5">{TITLES[view].p}</p>
             </div>
@@ -327,7 +366,7 @@ export default function AdminDashboard() {
                         <div key={a.text} className="flex items-start gap-2.5">
                           <span className={`shrink-0 p-1.5 rounded-lg ${a.color}`}><a.icon size={12} /></span>
                           <div className="min-w-0">
-                            <p className="text-[11px] font-semibold leading-sung">{a.text}</p>
+                            <p className="text-[11px] font-semibold leading-snug">{a.text}</p>
                             <p className="text-[10px] text-navy-500">{a.time}</p>
                           </div>
                         </div>

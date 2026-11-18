@@ -73,7 +73,7 @@ export default function BusinessDashboard() {
         transition={{ duration: 0.5, ease: 'easeOut', delay: 0.15 }}
         className="absolute bottom-0 left-0 right-0 z-[1000] p-4"
       >
-        <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-2xl shadow-navy-800/20 p-5">
+        <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-2xl shadow-navy-800/20 p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="font-heading font-extrabold text-lg text-navy-800">{MY_BUSINESS.name}</h2>
@@ -89,7 +89,7 @@ export default function BusinessDashboard() {
               <Megaphone size={16} /> Pasang Promo
             </button>
           </div>
-          <div className="grid grid-cols-3 gap-3 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
             {STATS.map((s) => (
               <div key={s.label} className="bg-blue-100 rounded-xl p-3.5">
                 <s.icon size={17} className="text-navy-600" />
@@ -98,6 +98,17 @@ export default function BusinessDashboard() {
                 <p className="text-[11px] font-bold text-success mt-1">{s.delta}</p>
               </div>
             ))}
+          </div>
+
+          <div className="mt-4 grid sm:grid-cols-2 gap-2.5">
+            <div className="bg-white border border-blue-200 rounded-xl px-3.5 py-3">
+              <p className="text-[11px] font-bold text-navy-700">Insight Hari Ini</p>
+              <p className="text-[11px] text-navy-500 mt-1">Puncak kunjungan terjadi pukul 12.00–13.00. Pertimbangkan promo jam makan siang.</p>
+            </div>
+            <div className="bg-white border border-blue-200 rounded-xl px-3.5 py-3">
+              <p className="text-[11px] font-bold text-navy-700">Aksi Cepat</p>
+              <p className="text-[11px] text-navy-500 mt-1">Perbarui jam buka dan foto menu agar rasio klik kontak tetap naik.</p>
+            </div>
           </div>
         </div>
       </motion.div>

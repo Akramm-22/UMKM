@@ -8,22 +8,27 @@ export default function FloatingHeader({ label }) {
   const navigate = useNavigate();
 
   return (
-    <div className="absolute top-4 left-4 z-[1100] flex items-center gap-2">
+    <div className="absolute top-4 left-4 right-4 z-[1100] flex items-center gap-2 pointer-events-none">
       <Link
         to="/"
-        className="flex items-center gap-1.5 bg-navy-800 text-blue-50 font-heading font-bold px-3.5 py-2.5 rounded-xl shadow-lg shadow-navy-800/20 hover:bg-navy-700 transition-colors"
+        className="pointer-events-auto flex items-center gap-1.5 bg-navy-800 text-blue-50 font-heading font-bold px-3.5 py-2.5 rounded-xl shadow-lg shadow-navy-800/20 hover:bg-navy-700 transition-colors"
       >
         <MapPin size={18} className="text-yellow-500" /> PesanLokal
       </Link>
       {label && (
-        <span className="bg-white/95 text-navy-700 text-xs font-semibold px-3 py-2.5 rounded-xl shadow">
+        <span className="hidden sm:inline-flex pointer-events-auto bg-white/95 text-navy-700 text-xs font-semibold px-3 py-2.5 rounded-xl shadow">
           {label}
+        </span>
+      )}
+      {user && (
+        <span className="hidden md:inline-flex ml-auto pointer-events-auto bg-white/95 text-navy-700 text-xs font-semibold px-3 py-2.5 rounded-xl shadow">
+          {user.name}
         </span>
       )}
       {user && (
         <button
           onClick={() => { logout(); navigate('/'); }}
-          className="bg-white/95 text-navy-600 p-2.5 rounded-xl shadow hover:text-danger transition-colors"
+          className="ml-auto md:ml-0 pointer-events-auto bg-white/95 text-navy-600 p-2.5 rounded-xl shadow hover:text-danger transition-colors"
           aria-label="Keluar"
           title={`Keluar (${user.name})`}
         >

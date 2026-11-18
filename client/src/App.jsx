@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
 import SplashScreen from './components/SplashScreen.jsx';
 import Landing from './pages/Landing.jsx';
@@ -18,20 +18,24 @@ function Protected({ children, admin = false }) {
 }
 
 export default function App() {
+  const { pathname } = useLocation();
   return (
     <>
       <SplashScreen />
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/explore" element={<ExploreMap />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/dashboard" element={<Protected><BusinessDashboard /></Protected>} />
-        <Route path="/daftar-usaha" element={<Protected><BusinessRegister /></Protected>} />
-        <Route path="/admin" element={<Protected admin><AdminDashboard /></Protected>} />
-        <Route path="/admin/peta" element={<Protected admin><AdminCommand /></Protected>} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      {/* key per path: halaman baru memutar transisi masuk yang sama */}
+      <div key={pathname} className="animate-page-in">
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/explore" element={<ExploreMap />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/dashboard" element={<Protected><BusinessDashboard /></Protected>} />
+          <Route path="/daftar-usaha" element={<Protected><BusinessRegister /></Protected>} />
+          <Route path="/admin" element={<Protected admin><AdminDashboard /></Protected>} />
+          <Route path="/admin/peta" element={<Protected admin><AdminCommand /></Protected>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
     </>
   );
 }

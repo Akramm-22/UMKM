@@ -3,7 +3,8 @@ import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
-import { Search, Star, Phone, Navigation, X, LocateFixed, SlidersHorizontal, Clock, ExternalLink } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Search, Star, Phone, Navigation, X, LocateFixed, SlidersHorizontal, Clock, ExternalLink, List } from 'lucide-react';
 import FloatingHeader from './FloatingHeader.jsx';
 
 const DEFAULT_CENTER = [-6.2, 106.816666]; // Jakarta — ganti sesuai wilayah pilot
@@ -125,6 +126,7 @@ export default function ExploreMap() {
   const [userPos, setUserPos] = useState(DEFAULT_CENTER);
   const [route, setRoute] = useState(null);
   const [routing, setRouting] = useState(false);
+  const [mobileListOpen, setMobileListOpen] = useState(false);
   const mapRef = useRef(null);
 
   // pakai lokasi asli konsumen bila diizinkan; selain itu tetap di pusat demo
@@ -277,6 +279,27 @@ export default function ExploreMap() {
           </div>
         )}
 
+        <button
+          onClick={() => setMobileListOpen(true)}
+          className="md:hidden absolute bottom-24 left-4 z-[1000] flex items-center gap-1.5 bg-navy-800 text-blue-50 text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-lg"
+        >
+          <List size={15} /> {visible.length} usaha
+        </button>
+
+        <div className="absolute right-4 bottom-24 z-[1000] hidden md:block bg-white/95 border border-blue-200 rounded-xl shadow-lg p-3 text-xs">
+          <p className="font-bold text-navy-700 mb-2">Legenda</p>
+          <div className="space-y-1.5">
+            {Object.values(CATEGORIES).map((c) => (
+              <div key={c.label} className="flex items-center gap-2 text-navy-600">
+                <span className="w-3 h-3 rounded-full" style={{ backgroundColor: c.accent }} /> {c.label}
+              </div>
+            ))}
+            <div className="flex items-center gap-2 text-navy-600">
+              <span className="w-3 h-3 rounded-full bg-yellow-500" /> Promo aktif
+            </div>
+          </div>
+        </div>
+
         <MapContainer center={DEFAULT_CENTER} zoom={15} zoomControl={false} className="h-full w-full" ref={mapRef}>
           {/* Stadia Alidade Smooth — basemap bersih ala Google Maps (gratis utk dev/localhost) */}
           <TileLayer
@@ -382,6 +405,63 @@ export default function ExploreMap() {
             </div>
           </div>
         )}
+
+        <AnimatePresence>
+          {mobileListOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="md:hidden absolute inset-0 z-[1200] bg-navy-900/45 backdrop-blur-sm"
+              onClick={() => setMobileListOpen(false)}
+            >
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                onClick={(e) => e.stopPropagation()}
+                className="absolute bottom-0 left-0 right-0 max-h-[72vh] bg-white rounded-t-3xl border-t border-blue-200"
+              >
+                <div className="flex items-center justify-between px-4 py-3 border-b border-blue-100">
+                  <p className="font-heading font-bold text-sm text-navy-800">Daftar usaha terdekat</p>
+                  <button onClick={() => setMobileListOpen(false)} className="text-navy-500" aria-label="Tutup daftar usaha">
+                    <X size={18} />
+                  </button>
+                </div>
+                <div className="overflow-y-auto p-4 space-y-2.5">
+                  {visible.map((b) => (
+                    <BusinessListItem
+                      key={b.id}
+                      biz={b}
+                      active={selected?.id === b.id}
+                      onClick={() => {
+                        setSelected(b);
+                        setMobileListOpen(false);
+                      }}
+                    />
+                  ))}
+                  {visible.length === 0 && (
+                    <div className="text-center py-6">
+                      <p className="text-sm text-navy-500">Tidak ada usaha yang cocok.</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFilter('semua');
+                          setOnlyOpen(false);
+                          setSearch('');
+                        }}
+                        className="mt-3 text-xs font-bold text-navy-700 bg-blue-100 hover:bg-blue-200 px-3 py-2 rounded-lg transition-colors"
+                      >
+                        Reset filter
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

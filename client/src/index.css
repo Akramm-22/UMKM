@@ -76,6 +76,30 @@ body {
 .animate-float-delay { animation: float-y 6s ease-in-out 1.2s infinite; }
 .animate-float-slow { animation: float-y 7s ease-in-out 0.6s infinite; }
 
+/* fokus keyboard terlihat sesuai design.md §8 */
+:focus-visible {
+  outline: 2px solid var(--color-yellow-500);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* transisi masuk halaman */
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-page-in { animation: page-in 0.35s ease-out both; }
+
+/* hormati preferensi gerak pengguna: matikan animasi loop & transisi berlebih */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* liquid shape: blob yang bermetamorfosis pelan */
 @keyframes blob-morph {
   0%, 100% { border-radius: 60% 40% 55% 45% / 50% 60% 40% 50%; }

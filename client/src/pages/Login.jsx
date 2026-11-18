@@ -143,22 +143,29 @@ export default function Login() {
           <p className="text-navy-500 text-sm text-center mt-1.5">Silakan masuk ke akunmu</p>
 
           <form onSubmit={submit} className="mt-8 space-y-4">
+            <label htmlFor="login-phone" className="block text-xs font-bold text-navy-700">Nomor HP</label>
             <div className="flex items-center gap-3 bg-blue-50 border border-transparent focus-within:border-navy-600 focus-within:bg-white rounded-xl px-4 py-3.5 transition-colors">
               <Phone size={18} className="text-navy-500 shrink-0" />
               <input
+                id="login-phone"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="Nomor HP"
+                autoComplete="tel"
                 className="w-full outline-none text-navy-800 placeholder:text-navy-500/60 bg-transparent text-sm"
               />
             </div>
+
+            <label htmlFor="login-password" className="block text-xs font-bold text-navy-700">Password</label>
             <div className="flex items-center gap-3 bg-blue-50 border border-transparent focus-within:border-navy-600 focus-within:bg-white rounded-xl px-4 py-3.5 transition-colors">
               <Lock size={18} className="text-navy-500 shrink-0" />
               <input
+                id="login-password"
                 type={showPw ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
+                autoComplete="current-password"
                 className="w-full outline-none text-navy-800 placeholder:text-navy-500/60 bg-transparent text-sm"
               />
               <button type="button" onClick={() => setShowPw((v) => !v)} className="text-navy-500 hover:text-navy-800 transition-colors" aria-label="Tampilkan password">

@@ -252,7 +252,7 @@ export default function Register() {
                       role="checkbox"
                       aria-checked={agree}
                       onClick={() => setAgree((v) => !v)}
-                      className={`mt-0.5 w-4.5 h-4.5 shrink-0 rounded-md border-2 flex items-center justify-center transition-colors ${
+                      className={`mt-0.5 w-5 h-5 shrink-0 rounded-md border-2 flex items-center justify-center transition-colors ${
                         agree ? 'bg-navy-800 border-navy-800 text-yellow-500' : 'border-blue-300 bg-white'
                       }`}
                     >

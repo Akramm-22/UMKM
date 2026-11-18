@@ -46,7 +46,7 @@ const FEATURED = [
 const reveal = {
   initial: { opacity: 0, y: 16 },
   whileInView: { opacity: 1, y: 0 },
-  viewport: { once: false, amount: 0.2 },
+  viewport: { once: true, amount: 0.2 },
   transition: { duration: 0.45, ease: 'easeOut' },
 };
 
@@ -108,7 +108,7 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-white font-body text-navy-800">
+    <div className="min-h-screen bg-white font-body text-navy-800 overflow-x-clip">
       {/* ═══ Navbar pill navy — selalu terlihat, area sekitarnya blur ═══ */}
       <header className="sticky top-0 z-50">
         {/* zona frosted-glass: konten yang lewat di bawah navbar jadi blur, memudar ke bawah */}

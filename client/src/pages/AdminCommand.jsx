@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { motion, AnimatePresence } from 'motion/react';
-import { Clock, CheckCircle2, Flag, Check, X } from 'lucide-react';
+import { Clock, CheckCircle2, Flag, Check, X, Search, ListFilter } from 'lucide-react';
 import FloatingHeader from '../components/FloatingHeader.jsx';
 
 const INITIAL = [
@@ -18,6 +18,7 @@ const STATUS_META = {
   pending: { color: '#FFC914', label: 'Menunggu', icon: Clock },
   approved: { color: '#4A90D9', label: 'Tayang', icon: CheckCircle2 },
   reported: { color: '#E05252', label: 'Dilaporkan', icon: Flag },
+  rejected: { color: '#8FBEDC', label: 'Ditolak', icon: X },
 };
 
 const statusIcon = (status, selected) => {
@@ -35,12 +36,21 @@ const statusIcon = (status, selected) => {
 export default function AdminCommand() {
   const [businesses, setBusinesses] = useState(INITIAL);
   const [selected, setSelected] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [query, setQuery] = useState('');
+  const [queueOpen, setQueueOpen] = useState(false);
 
   const counts = useMemo(
     () => businesses.reduce((acc, b) => ({ ...acc, [b.status]: (acc[b.status] ?? 0) + 1 }), {}),
     [businesses]
   );
   const pending = businesses.filter((b) => b.status === 'pending');
+  const visibleBusinesses = businesses.filter((b) => statusFilter === 'all' || b.status === statusFilter);
+  const pendingVisible = pending.filter((b) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return b.name.toLowerCase().includes(q) || b.owner.toLowerCase().includes(q) || b.category.toLowerCase().includes(q);
+  });
 
   const setStatus = (id, status) => {
     setBusinesses((list) => list.map((b) => (b.id === id ? { ...b, status } : b)));
@@ -58,13 +68,37 @@ export default function AdminCommand() {
         <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-danger" /> {counts.reported ?? 0} dilaporkan</span>
       </div>
 
+      <div className="absolute top-16 sm:top-20 right-4 z-[1100] flex items-center gap-2 bg-navy-800/95 border border-navy-600 rounded-xl p-2 shadow-lg">
+        {[
+          { key: 'all', label: 'Semua' },
+          { key: 'pending', label: 'Menunggu' },
+          { key: 'approved', label: 'Tayang' },
+          { key: 'reported', label: 'Laporan' },
+        ].map((f) => (
+          <button
+            key={f.key}
+            onClick={() => setStatusFilter(f.key)}
+            className={`text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors ${statusFilter === f.key ? 'bg-yellow-500 text-navy-800' : 'text-blue-200 hover:bg-navy-700'}`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      <button
+        onClick={() => setQueueOpen((v) => !v)}
+        className="sm:hidden absolute left-4 top-20 z-[1100] flex items-center gap-1.5 bg-navy-800 text-blue-50 text-xs font-bold px-3 py-2 rounded-xl shadow-lg"
+      >
+        <ListFilter size={14} /> Antrian ({pendingVisible.length})
+      </button>
+
       <MapContainer center={[-6.1995, 106.8160]} zoom={15} zoomControl={false} className="h-full w-full">
         {/* basemap terang yang sama dengan peta lain */}
         <TileLayer
           url="https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         />
-        {businesses.map((b) => (
+        {visibleBusinesses.map((b) => (
           <Marker
             key={b.id}
             position={[b.latitude, b.longitude]}
@@ -79,16 +113,30 @@ export default function AdminCommand() {
         initial={{ opacity: 0, x: -24 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.45, ease: 'easeOut', delay: 0.15 }}
-        className="absolute left-4 top-20 bottom-4 z-[1000] w-72 bg-navy-800/95 backdrop-blur border border-navy-600 rounded-2xl p-4 overflow-y-auto"
+        className={`absolute left-4 top-20 bottom-4 z-[1000] w-72 bg-navy-800/95 backdrop-blur border border-navy-600 rounded-2xl p-4 overflow-y-auto transition-all ${queueOpen ? 'translate-x-0 opacity-100' : '-translate-x-[120%] opacity-0 sm:translate-x-0 sm:opacity-100'}`}
       >
-        <h2 className="font-heading font-bold text-blue-50 text-sm flex items-center gap-2">
-          <Clock size={15} className="text-yellow-500" /> Antrian Verifikasi ({pending.length})
-        </h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-heading font-bold text-blue-50 text-sm flex items-center gap-2">
+            <Clock size={15} className="text-yellow-500" /> Antrian Verifikasi ({pendingVisible.length})
+          </h2>
+          <button onClick={() => setQueueOpen(false)} className="sm:hidden text-blue-300 hover:text-blue-50" aria-label="Tutup panel antrean">
+            <X size={16} />
+          </button>
+        </div>
+        <div className="mt-3 flex items-center gap-2 bg-navy-700 border border-navy-600 rounded-xl px-3 py-2">
+          <Search size={14} className="text-blue-300 shrink-0" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Cari usaha/pemilik..."
+            className="w-full bg-transparent outline-none text-xs text-blue-50 placeholder:text-blue-300/70"
+          />
+        </div>
         <div className="space-y-2 mt-3">
-          {pending.length === 0 && (
+          {pendingVisible.length === 0 && (
             <p className="text-blue-300 text-xs bg-navy-700 rounded-xl p-3">🎉 Semua usaha sudah ditinjau!</p>
           )}
-          {pending.map((b) => (
+          {pendingVisible.map((b) => (
             <button
               key={b.id}
               onClick={() => setSelected(b)}
