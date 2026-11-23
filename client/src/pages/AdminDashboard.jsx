@@ -1,14 +1,27 @@
-import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   MapPin, LayoutGrid, Radar, ShieldCheck, Building2, TriangleAlert, SlidersHorizontal,
-  LogOut, Search, Bell, TrendingUp, TrendingDown, Hourglass, BadgePercent, Footprints,
+  Search, Bell, TrendingUp, TrendingDown, Hourglass, BadgePercent, Footprints,
   Star, Check, X, ChevronRight, UtensilsCrossed, Wrench, ShoppingBasket, Megaphone,
   Users, BadgeCheck, Flag, Map as MapIcon, Save, RotateCcw, EyeOff, Store, Home,
-  PanelLeftClose, PanelLeftOpen,
+  PanelLeftClose, PanelLeftOpen, ArrowLeft, MessageSquare, Trash2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
+import ProfileMenu, { Avatar } from '../components/ProfileMenu.jsx';
+import SubmissionReview from '../components/SubmissionReview.jsx';
+import {
+  demoSubmission, demoDecision, localSubmissions, apiSubmissions, saveDecision, verificationLog, reasonText, waitedHours, fmtWaited,
+} from '../lib/verification.js';
+import { fetchReports, resolveReport, reasonLabel, fetchLocalReviews, removeReview } from '../lib/feedback.js';
+
+const timeAgo = (iso) => {
+  const m = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (m < 60) return `${m} mnt lalu`;
+  if (m < 1440) return `${Math.round(m / 60)} jam lalu`;
+  return `${Math.round(m / 1440)} hari lalu`;
+};
 
 const MONTHS = [
   { m: 'Jun', v: 14 }, { m: 'Jul', v: 22 }, { m: 'Agu', v: 19 },
@@ -31,7 +44,11 @@ const BIZ_INIT = [
   { id: 6, name: 'Pangkas Rambut Mandiri', owner: 'Ujang', cat: 'Jasa', status: 'pending', waited: '9 jam', dist: '1.6 km' },
   { id: 7, name: 'Kue Basah Bu Imas', owner: 'Imas K.', cat: 'Kuliner', status: 'pending', waited: '14 jam', dist: '0.5 km' },
   { id: 8, name: 'Jahit Rapi Teh Euis', owner: 'Euis', cat: 'Jasa', status: 'approved', rating: 4.6, views: 410, joined: 'Agu 2026' },
-];
+].map((b) => {
+  if (b.status !== 'pending') return b;
+  const decided = demoDecision(b.id);
+  return { ...b, status: decided?.status ?? 'pending', source: 'demo', submission: demoSubmission(b.id) };
+});
 
 const STATUS_META = {
   approved: { label: 'Tayang', cls: 'bg-success/10 text-success' },
@@ -80,8 +97,7 @@ function Toggle({ on, onClick }) {
 }
 
 export default function AdminDashboard() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [view, setView] = useState('ringkasan');
   const [biz, setBiz] = useState(BIZ_INIT);
   const [decided, setDecided] = useState({ approved: 0, rejected: 0 });
@@ -91,19 +107,84 @@ export default function AdminDashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [settings, setSettings] = useState({ email: true, autoPub: false, strict: true, sla: 24, radius: 2 });
   const [saved, setSaved] = useState(false);
+  const [reports, setReports] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [reportTab, setReportTab] = useState('open');
+  const [notes, setNotes] = useState({});
+  const [busyReport, setBusyReport] = useState(null);
+  const [reviewId, setReviewId] = useState(null);
+  const [log, setLog] = useState(() => verificationLog());
+  const [toast, setToast] = useState(null);
+
+  // gabungkan pengajuan nyata (API) & dari form lokal ke antrean demo
+  useEffect(() => {
+    const merge = (extra) => setBiz((list) => [...list.filter((b) => !extra.some((x) => x.id === b.id)), ...extra]);
+    merge(localSubmissions());
+    apiSubmissions().then((rows) => rows.length && merge(rows));
+  }, []);
+
+  const loadFeedback = useCallback(() => {
+    fetchReports().then(setReports);
+    setReviews(fetchLocalReviews());
+  }, []);
+
+  // laporan dari tab konsumen di browser yang sama ikut masuk tanpa reload
+  useEffect(() => {
+    loadFeedback();
+    const onStorage = (e) => {
+      if (e.key === 'pl_local_reports' || e.key === 'pl_local_reviews') loadFeedback();
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [loadFeedback]);
+
+  const openReports = reports.filter((r) => r.status === 'open');
+  const activityFeed = [
+    ...openReports.slice(0, 3).map((r) => ({
+      icon: Flag,
+      color: 'text-danger bg-danger/10',
+      text: `Laporan konsumen: ${r.business_name} — ${reasonLabel(r.reason)}`,
+      time: timeAgo(r.created_at),
+      key: `report-${r.id}`,
+    })),
+    ...ACTIVITIES,
+  ];
+
+  const actOnReport = async (r, status, suspend = false) => {
+    setBusyReport(r.id);
+    try {
+      const updated = await resolveReport(r, { status, suspend, note: notes[r.id] ?? '' });
+      setReports((list) => list.map((x) => (x.id === r.id ? updated : x)));
+      if (suspend) setBiz((list) => list.map((b) => (b.name === r.business_name ? { ...b, status: 'rejected' } : b)));
+    } finally {
+      setBusyReport(null);
+    }
+  };
+
+  const deleteReview = async (rv) => {
+    await removeReview(rv);
+    setReviews((list) => list.filter((x) => x.id !== rv.id));
+  };
 
   const maxV = useMemo(() => Math.max(...MONTHS.map((m) => m.v)), []);
-  const pending = biz.filter((b) => b.status === 'pending');
+  const pending = biz
+    .filter((b) => b.status === 'pending')
+    .sort((a, b) => new Date(a.submission?.submitted_at ?? 0) - new Date(b.submission?.submitted_at ?? 0));
   const reported = biz.filter((b) => b.status === 'reported');
+  const reviewing = pending.find((b) => b.id === reviewId) ?? null;
 
   const setStatus = (id, status, isDecision = false) => {
     setBiz((list) => list.map((b) => (b.id === id ? { ...b, status } : b)));
     if (isDecision) setDecided((d) => (status === 'approved' ? { ...d, approved: d.approved + 1 } : { ...d, rejected: d.rejected + 1 }));
   };
 
-  const doLogout = () => {
-    logout();
-    navigate('/login');
+  const decide = async (item, decision) => {
+    const entry = await saveDecision(item, decision);
+    setStatus(item.id, decision.status, true);
+    setLog((l) => [entry, ...l]);
+    setReviewId(null);
+    setToast(decision.status === 'approved' ? `${item.name} disetujui & tayang di peta.` : `${item.name} ditolak — catatan dikirim ke produsen.`);
+    setTimeout(() => setToast(null), 3200);
   };
 
   const saveSettings = () => {
@@ -123,7 +204,7 @@ export default function AdminDashboard() {
     { key: 'peta', icon: Radar, label: 'Peta Komando', to: '/admin/peta' },
     { key: 'verifikasi', icon: ShieldCheck, label: 'Verifikasi', badge: pending.length },
     { key: 'usaha', icon: Building2, label: 'Daftar Usaha' },
-    { key: 'laporan', icon: TriangleAlert, label: 'Laporan', badge: reported.length },
+    { key: 'laporan', icon: TriangleAlert, label: 'Laporan', badge: reported.length + openReports.length },
     { key: 'pengaturan', icon: SlidersHorizontal, label: 'Pengaturan' },
   ];
 
@@ -131,7 +212,7 @@ export default function AdminDashboard() {
     ringkasan: { h: `Selamat pagi, ${user?.name?.split(' ')[0] ?? 'Admin'} 🛡️`, p: 'Pantau kesehatan ekosistem UMKM-mu hari ini.' },
     verifikasi: { h: 'Verifikasi Pendaftaran', p: `${pending.length} usaha menunggu tinjauanmu — jaga SLA ≤ ${settings.sla} jam.` },
     usaha: { h: 'Daftar Usaha', p: `${biz.length} usaha terdaftar di wilayahmu.` },
-    laporan: { h: 'Laporan Masuk', p: reported.length ? `${reported.length} laporan butuh tindak lanjut.` : 'Tidak ada laporan aktif.' },
+    laporan: { h: 'Laporan & Ulasan', p: reported.length + openReports.length ? `${reported.length + openReports.length} laporan butuh tindak lanjut.` : 'Tidak ada laporan aktif.' },
     pengaturan: { h: 'Pengaturan Panel', p: 'Atur kebijakan verifikasi dan notifikasi.' },
   };
 
@@ -142,41 +223,47 @@ export default function AdminDashboard() {
     return okFilter && okQuery;
   });
 
-  // baris antrean verifikasi — dipakai di ringkasan & halaman verifikasi
-  const QueueRow = ({ b, detail = false }) => (
-    <motion.div
-      layout
-      exit={{ opacity: 0, x: 40, height: 0, marginTop: 0 }}
-      transition={{ duration: 0.3 }}
-      className="flex flex-wrap items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-3.5 py-3"
-    >
-      <span className="w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br from-navy-700 to-navy-900 text-yellow-400 font-heading font-extrabold text-sm flex items-center justify-center shadow-sm">
-        {b.name.slice(0, 1)}
-      </span>
-      <div className="min-w-0 flex-1 basis-40">
-        <p className="text-xs font-bold truncate">{b.name}</p>
-        <p className="text-[10px] text-navy-500 truncate">
-          {b.owner} · {b.cat} · menunggu {b.waited}{detail && b.dist ? ` · ${b.dist} dari pusat` : ''}
-        </p>
-      </div>
-      <div className="flex gap-2 ml-auto">
+  // baris antrean verifikasi — keputusan hanya lewat panel tinjauan
+  const QueueRow = ({ b, detail = false }) => {
+    const sub = b.submission;
+    const waited = sub ? waitedHours(sub.submitted_at) : null;
+    const over = waited != null && waited > settings.sla;
+    const docs = sub?.documents ?? [];
+    const docsOk = docs.filter((d) => d.url || d.kind === 'ktp').length;
+    return (
+      <motion.div
+        layout
+        exit={{ opacity: 0, x: 40, height: 0, marginTop: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex flex-wrap items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-3.5 py-3"
+      >
+        <span className="w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br from-navy-700 to-navy-900 text-yellow-400 font-heading font-extrabold text-sm flex items-center justify-center shadow-sm">
+          {b.name.slice(0, 1)}
+        </span>
+        <div className="min-w-0 flex-1 basis-40">
+          <p className="text-xs font-bold truncate">{b.name}</p>
+          <p className="text-[10px] text-navy-500 truncate">
+            {b.owner} · {b.cat}
+            {waited != null ? <> · <span className={over ? 'text-danger font-bold' : ''}>menunggu {fmtWaited(waited)}</span></> : b.waited ? ` · menunggu ${b.waited}` : ''}
+          </p>
+          {detail && sub && (
+            <p className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] mt-1">
+              <span className={docsOk === docs.length ? 'text-success font-semibold' : 'text-yellow-600 font-semibold'}>Dokumen {docsOk}/{docs.length}</span>
+              {sub.address && <span className="text-navy-500 truncate max-w-[16rem]">{sub.address}</span>}
+            </p>
+          )}
+        </div>
         <motion.button
-          whileTap={{ scale: 0.92 }}
-          onClick={() => setStatus(b.id, 'approved', true)}
-          className="flex items-center gap-1 bg-success hover:brightness-110 text-white text-[11px] font-bold px-3 py-2 rounded-lg transition-all"
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setReviewId(b.id)}
+          disabled={!sub}
+          className="ml-auto flex items-center gap-1.5 bg-navy-800 hover:bg-navy-700 disabled:opacity-50 text-blue-50 text-[11px] font-bold px-3.5 py-2 rounded-lg transition-colors"
         >
-          <Check size={12} /> Setujui
+          <Search size={12} /> Tinjau Detail
         </motion.button>
-        <motion.button
-          whileTap={{ scale: 0.92 }}
-          onClick={() => setStatus(b.id, 'rejected', true)}
-          className="flex items-center gap-1 bg-white border border-blue-200 hover:border-danger hover:text-danger text-navy-500 text-[11px] font-bold px-3 py-2 rounded-lg transition-colors"
-        >
-          <X size={12} /> Tolak
-        </motion.button>
-      </div>
-    </motion.div>
-  );
+      </motion.div>
+    );
+  };
 
   return (
     <div className="h-screen flex flex-col lg:flex-row bg-blue-50 font-body text-navy-800 overflow-hidden">
@@ -188,9 +275,7 @@ export default function AdminDashboard() {
             PesanLokal<span className="text-yellow-500">.</span>
           </Link>
           <span className="text-[9px] font-bold uppercase tracking-widest text-navy-500 mt-0.5">Admin</span>
-          <button onClick={doLogout} className="ml-auto text-navy-500 hover:text-danger transition-colors p-1.5" aria-label="Keluar">
-            <LogOut size={16} />
-          </button>
+          <ProfileMenu className="ml-auto" logoutTo="/login" />
         </div>
         <nav className="flex gap-2 mt-2.5 overflow-x-auto no-scrollbar">
           {NAV.map((n) => {
@@ -283,32 +368,15 @@ export default function AdminDashboard() {
         </nav>
 
         <div className="relative mt-auto pt-4 border-t border-navy-600">
-          <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-2.5'}`}>
-            <span className="w-9 h-9 rounded-full bg-blue-300 text-navy-800 font-heading font-extrabold text-sm flex items-center justify-center">
-              {(user?.name ?? 'Admin').slice(0, 1)}
-            </span>
+          <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-2.5'}`} title={sidebarCollapsed ? user?.name : undefined}>
+            {user && <Avatar user={user} size={36} />}
             {!sidebarCollapsed && (
-              <>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-blue-50 truncate">{user?.name ?? 'Admin Demo'}</p>
-                  <p className="text-[10px] text-navy-500">Administrator</p>
-                </div>
-                <button onClick={doLogout} className="text-navy-500 hover:text-danger transition-colors" aria-label="Keluar">
-                  <LogOut size={16} />
-                </button>
-              </>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-blue-50 truncate">{user?.name ?? 'Admin Demo'}</p>
+                <p className="text-[10px] text-navy-500">Administrator</p>
+              </div>
             )}
           </div>
-          {sidebarCollapsed && (
-            <button
-              onClick={doLogout}
-              className="mt-3 w-full flex items-center justify-center text-navy-500 hover:text-danger transition-colors"
-              aria-label="Keluar"
-              title="Keluar"
-            >
-              <LogOut size={16} />
-            </button>
-          )}
         </div>
       </aside>
 
@@ -318,6 +386,15 @@ export default function AdminDashboard() {
           {/* topbar */}
           <motion.div {...rise(0)} className="flex flex-wrap items-center gap-x-4 gap-y-3">
             <div className="min-w-0 flex-1">
+              {view !== 'ringkasan' && (
+                <button
+                  type="button"
+                  onClick={() => setView('ringkasan')}
+                  className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold text-navy-600 hover:text-navy-900 bg-white border border-blue-200 hover:border-navy-500 px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  <ArrowLeft size={13} /> Kembali ke Ringkasan
+                </button>
+              )}
               <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-navy-500 font-semibold mb-1">
                 <Home size={12} />
                 <span>Admin</span>
@@ -362,7 +439,7 @@ export default function AdminDashboard() {
                   >
                     <p className="font-heading font-bold text-xs">Notifikasi</p>
                     <div className="mt-3 space-y-3">
-                      {ACTIVITIES.slice(0, 4).map((a) => (
+                      {activityFeed.slice(0, 4).map((a) => (
                         <div key={a.text} className="flex items-start gap-2.5">
                           <span className={`shrink-0 p-1.5 rounded-lg ${a.color}`}><a.icon size={12} /></span>
                           <div className="min-w-0">
@@ -376,6 +453,7 @@ export default function AdminDashboard() {
                 )}
               </AnimatePresence>
             </div>
+            <ProfileMenu className="hidden lg:block" logoutTo="/login" />
           </motion.div>
 
           {/* ═══ RINGKASAN ═══ */}
@@ -488,7 +566,7 @@ export default function AdminDashboard() {
                 <motion.div {...rise(0.48)} className="lg:col-span-2 bg-white border border-blue-200 rounded-2xl p-5">
                   <p className="font-heading font-bold text-sm">Aktivitas Terbaru</p>
                   <div className="mt-4 space-y-4">
-                    {ACTIVITIES.map((a, i) => (
+                    {activityFeed.slice(0, 6).map((a, i) => (
                       <motion.div key={a.text} {...rise(0.55 + i * 0.06)} className="flex items-start gap-3">
                         <span className={`shrink-0 p-2 rounded-xl ${a.color}`}><a.icon size={14} /></span>
                         <div className="min-w-0">
@@ -505,9 +583,13 @@ export default function AdminDashboard() {
 
           {/* ═══ VERIFIKASI ═══ */}
           {view === 'verifikasi' && (
-            <motion.div {...rise(0.05)} className="bg-white border border-blue-200 rounded-2xl p-5 mt-6 mb-8">
+            <>
+            <motion.div {...rise(0.05)} className="bg-white border border-blue-200 rounded-2xl p-5 mt-6">
               <div className="flex items-center justify-between">
-                <p className="font-heading font-bold text-sm">Semua Antrean ({pending.length})</p>
+                <div>
+                  <p className="font-heading font-bold text-sm">Semua Antrean ({pending.length})</p>
+                  <p className="text-[11px] text-navy-500 mt-0.5">Diurutkan dari pengajuan terlama. Periksa formulir & dokumen sebelum memutuskan.</p>
+                </div>
                 <span className="bg-yellow-500/15 text-yellow-600 text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wide">SLA ≤ {settings.sla} jam</span>
               </div>
               <div className="mt-4 space-y-2">
@@ -523,6 +605,43 @@ export default function AdminDashboard() {
                 )}
               </div>
             </motion.div>
+
+            {/* riwayat keputusan — jejak audit verifikasi */}
+            <motion.div {...rise(0.1)} className="bg-white border border-blue-200 rounded-2xl p-5 mt-4 mb-8">
+              <div className="flex items-center justify-between">
+                <p className="font-heading font-bold text-sm">Riwayat Keputusan ({log.length})</p>
+                <span className="text-[11px] text-navy-500">
+                  <span className="text-success font-bold">{log.filter((l) => l.status === 'approved').length} disetujui</span> ·{' '}
+                  <span className="text-danger font-bold">{log.filter((l) => l.status === 'rejected').length} ditolak</span>
+                </span>
+              </div>
+              <div className="mt-3 divide-y divide-blue-100">
+                {log.slice(0, 20).map((l) => (
+                  <div key={l.id} className="py-3 flex items-start gap-3">
+                    <span className={`shrink-0 p-2 rounded-xl ${l.status === 'approved' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
+                      {l.status === 'approved' ? <BadgeCheck size={14} /> : <X size={14} />}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold">
+                        {l.name} <span className="font-normal text-navy-500">· {l.owner}</span>
+                      </p>
+                      <p className="text-[11px] text-navy-500 mt-0.5">
+                        {l.status === 'approved' ? 'Disetujui' : 'Ditolak'} oleh {l.admin ?? 'Admin'} · {timeAgo(l.at)}
+                        {l.checklist && ` · checklist ${Object.values(l.checklist).filter(Boolean).length}/5`}
+                      </p>
+                      {l.reasons?.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {reasonText(l.reasons).map((r) => <span key={r} className="bg-danger/10 text-danger text-[10px] font-bold px-2 py-0.5 rounded-md">{r}</span>)}
+                        </div>
+                      )}
+                      {l.note && <p className="text-xs text-navy-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 mt-1.5">“{l.note}”</p>}
+                    </div>
+                  </div>
+                ))}
+                {log.length === 0 && <p className="text-center text-xs text-navy-500 py-6">Belum ada keputusan verifikasi.</p>}
+              </div>
+            </motion.div>
+            </>
           )}
 
           {/* ═══ DAFTAR USAHA ═══ */}
@@ -583,6 +702,111 @@ export default function AdminDashboard() {
           {/* ═══ LAPORAN ═══ */}
           {view === 'laporan' && (
             <div className="mt-6 mb-8 space-y-4">
+              {/* laporan konsumen dari halaman peta */}
+              <motion.div {...rise(0.05)} className="bg-white border border-blue-200 rounded-2xl p-4 sm:p-5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-heading font-bold text-sm mr-auto flex items-center gap-2"><Flag size={15} className="text-danger" /> Laporan Konsumen</p>
+                  {[
+                    { k: 'open', l: 'Perlu ditinjau' },
+                    { k: 'resolved', l: 'Ditindaklanjuti' },
+                    { k: 'dismissed', l: 'Tidak terbukti' },
+                  ].map((t) => (
+                    <button
+                      key={t.k}
+                      onClick={() => setReportTab(t.k)}
+                      className={`text-[11px] font-bold px-3 py-1.5 rounded-full transition-colors ${reportTab === t.k ? 'bg-navy-800 text-yellow-500' : 'bg-blue-100 text-navy-500 hover:bg-blue-200'}`}
+                    >
+                      {t.l} ({reports.filter((r) => r.status === t.k).length})
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  <AnimatePresence initial={false}>
+                    {reports.filter((r) => r.status === reportTab).map((r) => (
+                      <motion.div
+                        key={r.id}
+                        layout
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: 40 }}
+                        className={`border rounded-xl p-4 ${r.status === 'open' ? 'border-danger/30 bg-danger/[0.03]' : 'border-blue-200 bg-blue-50/50'}`}
+                      >
+                        <div className="flex flex-wrap items-start gap-3">
+                          <span className="shrink-0 bg-danger/10 text-danger p-2 rounded-xl"><TriangleAlert size={16} /></span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-heading font-bold">{r.business_name}</p>
+                            <p className="text-[11px] text-navy-500 mt-0.5">
+                              Dilaporkan {r.reporter_name} · {timeAgo(r.created_at)}{r.address ? ` · ${r.address}` : ''}
+                            </p>
+                            <span className="inline-block mt-2 bg-danger/10 text-danger text-[11px] font-bold px-2 py-0.5 rounded-md">{reasonLabel(r.reason)}</span>
+                            {r.detail && <p className="text-xs text-navy-700 bg-white border border-blue-200 rounded-lg px-3 py-2 mt-2 leading-relaxed">“{r.detail}”</p>}
+                            {r.status !== 'open' && (
+                              <p className="text-[11px] text-navy-500 mt-2">
+                                {r.status === 'resolved' ? (r.suspend ? 'Usaha ditangguhkan' : 'Ditindaklanjuti') : 'Laporan tidak terbukti'}
+                                {r.resolved_at ? ` · ${timeAgo(r.resolved_at)}` : ''}{r.admin_note ? ` — ${r.admin_note}` : ''}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        {r.status === 'open' && (
+                          <div className="mt-3 sm:pl-11 space-y-2">
+                            <label htmlFor={`note-${r.id}`} className="sr-only">Catatan admin</label>
+                            <input
+                              id={`note-${r.id}`}
+                              value={notes[r.id] ?? ''}
+                              onChange={(e) => setNotes((n) => ({ ...n, [r.id]: e.target.value }))}
+                              placeholder="Catatan tindak lanjut (opsional), cth. sudah dicek via telepon"
+                              className="w-full bg-white border border-blue-200 focus:border-navy-600 rounded-lg px-3 py-2 text-xs outline-none transition-colors"
+                            />
+                            <div className="flex flex-wrap gap-2">
+                              <button disabled={busyReport === r.id} onClick={() => actOnReport(r, 'resolved', true)} className="flex items-center gap-1.5 bg-danger hover:brightness-110 disabled:opacity-60 text-white text-[11px] font-bold px-3.5 py-2 rounded-lg transition-all">
+                                <EyeOff size={12} /> Tangguhkan Usaha
+                              </button>
+                              <button disabled={busyReport === r.id} onClick={() => actOnReport(r, 'resolved')} className="flex items-center gap-1.5 bg-navy-800 hover:bg-navy-700 disabled:opacity-60 text-blue-50 text-[11px] font-bold px-3.5 py-2 rounded-lg transition-colors">
+                                <Check size={12} /> Tandai Ditindaklanjuti
+                              </button>
+                              <button disabled={busyReport === r.id} onClick={() => actOnReport(r, 'dismissed')} className="flex items-center gap-1.5 bg-white border border-blue-200 hover:border-navy-500 disabled:opacity-60 text-navy-600 text-[11px] font-bold px-3.5 py-2 rounded-lg transition-colors">
+                                <X size={12} /> Tidak Terbukti
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                  {reports.filter((r) => r.status === reportTab).length === 0 && (
+                    <p className="text-center text-xs text-navy-500 py-8">
+                      {reportTab === 'open' ? 'Belum ada laporan konsumen yang menunggu.' : 'Belum ada laporan di kategori ini.'}
+                    </p>
+                  )}
+                </div>
+              </motion.div>
+
+              {/* moderasi ulasan konsumen */}
+              <motion.div {...rise(0.1)} className="bg-white border border-blue-200 rounded-2xl p-4 sm:p-5">
+                <p className="font-heading font-bold text-sm flex items-center gap-2"><MessageSquare size={15} className="text-info" /> Ulasan Terbaru ({reviews.length})</p>
+                <div className="mt-3 divide-y divide-blue-100">
+                  {reviews.map((rv) => (
+                    <div key={rv.id} className="flex items-start gap-3 py-3">
+                      <span className="w-8 h-8 shrink-0 rounded-full bg-navy-800 text-yellow-500 font-heading font-bold text-xs flex items-center justify-center">{(rv.user_name ?? '?').slice(0, 1)}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold">{rv.user_name} <span className="font-normal text-navy-500">→ {rv.business_name}</span></p>
+                        <p className="flex items-center gap-1 text-[11px] text-navy-500 mt-0.5">
+                          <Star size={11} className="text-yellow-500 fill-yellow-500" /> {rv.rating} · {timeAgo(rv.created_at)}
+                        </p>
+                        {rv.comment && <p className="text-xs text-navy-700 mt-1.5 leading-relaxed">{rv.comment}</p>}
+                      </div>
+                      <button onClick={() => deleteReview(rv)} className="shrink-0 flex items-center gap-1 text-[11px] font-bold text-navy-500 hover:text-danger border border-blue-200 hover:border-danger px-2.5 py-1.5 rounded-lg transition-colors" aria-label={`Hapus ulasan ${rv.user_name}`}>
+                        <Trash2 size={12} /> Hapus
+                      </button>
+                    </div>
+                  ))}
+                  {reviews.length === 0 && <p className="text-center text-xs text-navy-500 py-6">Belum ada ulasan baru dari konsumen.</p>}
+                </div>
+              </motion.div>
+
+              {reported.length > 0 && <p className="font-heading font-bold text-sm pt-2">Usaha Berstatus Dilaporkan</p>}
               <AnimatePresence>
                 {reported.map((b) => (
                   <motion.div
@@ -619,7 +843,7 @@ export default function AdminDashboard() {
                   </motion.div>
                 ))}
               </AnimatePresence>
-              {reported.length === 0 && (
+              {reported.length === 0 && openReports.length === 0 && (
                 <motion.div {...rise(0.05)} className="bg-white border border-blue-200 rounded-2xl text-center py-14">
                   <ShieldCheck size={32} className="mx-auto text-success" />
                   <p className="text-sm font-bold mt-2.5">Semua aman! 🛡️</p>
@@ -719,6 +943,33 @@ export default function AdminDashboard() {
           )}
         </div>
       </main>
+
+      <AnimatePresence>
+        {reviewing && (
+          <SubmissionReview
+            key="review"
+            item={reviewing}
+            sla={settings.sla}
+            adminName={user?.name}
+            onClose={() => setReviewId(null)}
+            onDecide={decide}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            role="status"
+            className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[1500] flex items-center gap-2 bg-navy-800 text-blue-50 text-sm font-semibold px-4 py-3 rounded-xl shadow-xl"
+          >
+            <BadgeCheck size={16} className="text-yellow-500" /> {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

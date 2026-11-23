@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { MapPin, Phone, Lock, User, Eye, EyeOff, ArrowRight, ArrowLeft, Check, CircleAlert, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { AuthSidePanel } from './Login.jsx';
+import BackButton from '../components/BackButton.jsx';
 
 const validators = {
   name: (v) => (v.trim().length < 3 ? 'Nama minimal 3 huruf' : null),
@@ -115,6 +116,12 @@ export default function Register() {
 
         {/* form kanan */}
         <div className="p-8 sm:p-10 flex flex-col justify-center overflow-y-auto no-scrollbar">
+          <BackButton
+            fallback="/login"
+            variant="ghost"
+            onClick={step === 1 ? () => setStep(0) : undefined}
+            className="self-start -ml-2 -mt-2 mb-2"
+          />
           <Link to="/" className="flex items-center justify-center gap-2 font-heading font-extrabold text-xl text-navy-800">
             <span className="bg-navy-800 text-yellow-500 p-2 rounded-full"><MapPin size={18} /></span>
             PesanLokal<span className="text-yellow-500">.</span>

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { MapPin, Phone, Lock, Eye, EyeOff, ArrowRight, Users, Store, ShieldCheck } from 'lucide-react';
 import { useAuth, DUMMY_ACCOUNTS } from '../context/AuthContext.jsx';
+import BackButton from '../components/BackButton.jsx';
 
 const IMG = (id, w = 640) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=70`;
 
@@ -135,6 +136,7 @@ export default function Login() {
 
         {/* form kanan */}
         <div className="p-8 sm:p-10 flex flex-col justify-center overflow-y-auto no-scrollbar">
+          <BackButton fallback="/" variant="ghost" className="self-start -ml-2 -mt-2 mb-2" />
           <Link to="/" className="flex items-center justify-center gap-2 font-heading font-extrabold text-xl text-navy-800">
             <span className="bg-navy-800 text-yellow-500 p-2 rounded-full"><MapPin size={18} /></span>
             PesanLokal<span className="text-yellow-500">.</span>

@@ -59,7 +59,7 @@ export default function AdminCommand() {
 
   return (
     <div className="relative h-screen w-full font-body bg-navy-900">
-      <FloatingHeader label="Command Map · Admin" />
+      <FloatingHeader label="Command Map · Admin" backTo="/admin" onBack={selected ? () => setSelected(null) : undefined} />
 
       {/* bar statistik atas */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1100] hidden sm:flex items-center gap-4 bg-navy-800/95 border border-navy-600 text-blue-50 text-xs font-semibold px-5 py-2.5 rounded-xl shadow-lg">

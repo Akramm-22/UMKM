@@ -11,7 +11,8 @@ const app = express();
 
 app.use(helmet());
 app.use(cors({ origin: 'http://localhost:5173' }));
-app.use(express.json());
+// foto usaha dikirim sebagai data URL terkompresi dari browser
+app.use(express.json({ limit: '12mb' }));
 
 // endpoint cek kesehatan — sekaligus tes koneksi DB
 app.get('/api/health', async (_req, res) => {
