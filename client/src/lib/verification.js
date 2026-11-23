@@ -104,6 +104,8 @@ export const demoSubmission = (id) => {
 // keputusan atas pengajuan demo disimpan agar konsisten setelah muat ulang
 export const demoDecision = (id) => readJson(DEMO_DECISIONS, {})[id] ?? null;
 
+export const demoSubmissionList = () => DEMO_SUBMISSIONS;
+
 // pengajuan dari form /daftar-usaha yang tersimpan lokal saat server/DB belum tersambung
 export function localSubmissions() {
   return readJson(LOCAL_SUBMISSIONS).map((s) => ({

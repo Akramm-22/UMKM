@@ -41,6 +41,68 @@ router.get('/stats', async (_req, res) => {
   res.json(Object.fromEntries(rows.map((r) => [r.status, r.total])));
 });
 
+// ringkasan dashboard: semua angka dihitung langsung dari tabel, deret harian `days` hari terakhir
+router.get('/overview', async (req, res) => {
+  const days = Math.min(400, Math.max(7, Number(req.query.days) || 30));
+  try {
+    const [users, status, cats, series, reviews, ratingDist, reports, reasons, recent, ages, points] = await Promise.all([
+      query(
+        `SELECT
+           COUNT(*) FILTER (WHERE role = 'admin')::int AS admins,
+           COUNT(*) FILTER (WHERE role = 'user' AND id IN (SELECT owner_id FROM businesses))::int AS producers,
+           COUNT(*) FILTER (WHERE role = 'user' AND id NOT IN (SELECT owner_id FROM businesses))::int AS consumers,
+           COUNT(*) FILTER (WHERE created_at >= NOW() - make_interval(days => $1))::int AS new_users
+         FROM users`,
+        [days]
+      ),
+      query(`SELECT status, COUNT(*)::int AS total FROM businesses GROUP BY status`),
+      query(`SELECT LOWER(category) AS category, COUNT(*)::int AS total FROM businesses WHERE status = 'approved' GROUP BY 1 ORDER BY 2 DESC`),
+      query(
+        `WITH d AS (SELECT generate_series(CURRENT_DATE - ($1::int - 1), CURRENT_DATE, '1 day')::date AS day)
+         SELECT to_char(d.day, 'YYYY-MM-DD') AS day,
+           (SELECT COUNT(*)::int FROM businesses b WHERE b.created_at::date = d.day) AS submissions,
+           (SELECT COUNT(*)::int FROM businesses b WHERE b.status = 'approved' AND b.reviewed_at::date = d.day) AS approvals,
+           (SELECT COUNT(*)::int FROM users u WHERE u.created_at::date = d.day) AS users,
+           (SELECT COUNT(*)::int FROM reviews r WHERE r.created_at::date = d.day) AS reviews,
+           (SELECT COUNT(*)::int FROM reports p WHERE p.created_at::date = d.day) AS reports
+         FROM d ORDER BY d.day`,
+        [days]
+      ),
+      query(`SELECT COUNT(*)::int AS total, COALESCE(ROUND(AVG(rating)::numeric, 2), 0)::float AS avg FROM reviews`),
+      query(`SELECT rating, COUNT(*)::int AS total FROM reviews GROUP BY rating`),
+      query(`SELECT status, COUNT(*)::int AS total FROM reports GROUP BY status`),
+      query(`SELECT reason, COUNT(*)::int AS total FROM reports GROUP BY reason ORDER BY 2 DESC`),
+      query(
+        `(SELECT 'submission' AS type, b.name AS title, b.status::text AS meta, b.created_at AS at FROM businesses b ORDER BY b.created_at DESC LIMIT 6)
+         UNION ALL
+         (SELECT 'review', b.name, r.rating::text, r.created_at FROM reviews r JOIN businesses b ON b.id = r.business_id ORDER BY r.created_at DESC LIMIT 6)
+         UNION ALL
+         (SELECT 'report', b.name, p.reason, p.created_at FROM reports p JOIN businesses b ON b.id = p.business_id ORDER BY p.created_at DESC LIMIT 6)
+         ORDER BY at DESC LIMIT 10`
+      ),
+      query(`SELECT ROUND(EXTRACT(EPOCH FROM (NOW() - created_at)) / 3600, 1)::float AS hours FROM businesses WHERE status = 'pending'`),
+      query(`SELECT latitude AS lat, longitude AS lng, status::text AS status, LOWER(category) AS category FROM businesses ORDER BY created_at DESC LIMIT 500`),
+    ]);
+    const toMap = (rows, key) => Object.fromEntries(rows.map((r) => [r[key], r.total]));
+    res.json({
+      source: 'database',
+      generatedAt: new Date().toISOString(),
+      days,
+      users: users.rows[0],
+      businesses: toMap(status.rows, 'status'),
+      categories: cats.rows,
+      series: series.rows,
+      reviews: { ...reviews.rows[0], dist: toMap(ratingDist.rows, 'rating') },
+      reports: { ...toMap(reports.rows, 'status'), reasons: reasons.rows },
+      recent: recent.rows,
+      pendingAges: ages.rows.map((r) => r.hours),
+      points: points.rows,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // laporan konsumen untuk ditinjau admin (PRD F17)
 router.get('/reports', async (req, res) => {
   const status = ['open', 'resolved', 'dismissed'].includes(req.query.status) ? req.query.status : 'open';

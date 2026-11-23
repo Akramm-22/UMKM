@@ -1,16 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  MapPin, LayoutGrid, Radar, ShieldCheck, Building2, TriangleAlert, SlidersHorizontal,
-  Search, Bell, TrendingUp, TrendingDown, Hourglass, BadgePercent, Footprints,
-  Star, Check, X, ChevronRight, UtensilsCrossed, Wrench, ShoppingBasket, Megaphone,
-  Users, BadgeCheck, Flag, Map as MapIcon, Save, RotateCcw, EyeOff, Store, Home,
-  PanelLeftClose, PanelLeftOpen, ArrowLeft, MessageSquare, Trash2,
-} from 'lucide-react';
+  IconContext, MapPin, SquaresFour as LayoutGrid, Crosshair as Radar, ShieldCheck, Buildings as Building2, WarningOctagon as TriangleAlert,
+  SlidersHorizontal, MagnifyingGlass as Search, Bell, Star, Check, X, CaretRight as ChevronRight, Megaphone,
+  Users, SealCheck as BadgeCheck, Flag, FloppyDisk as Save, ArrowCounterClockwise as RotateCcw, EyeSlash as EyeOff, Storefront as Store, House as Home,
+  ArrowLineLeft as PanelLeftClose, ArrowLineRight as PanelLeftOpen, ArrowLeft, ChatText as MessageSquare, Trash as Trash2,
+} from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext.jsx';
 import ProfileMenu, { Avatar } from '../components/ProfileMenu.jsx';
 import SubmissionReview from '../components/SubmissionReview.jsx';
+import DecisionResult from '../components/DecisionResult.jsx';
+import AdminOverview from '../components/admin/AdminOverview.jsx';
 import {
   demoSubmission, demoDecision, localSubmissions, apiSubmissions, saveDecision, verificationLog, reasonText, waitedHours, fmtWaited,
 } from '../lib/verification.js';
@@ -22,17 +23,6 @@ const timeAgo = (iso) => {
   if (m < 1440) return `${Math.round(m / 60)} jam lalu`;
   return `${Math.round(m / 1440)} hari lalu`;
 };
-
-const MONTHS = [
-  { m: 'Jun', v: 14 }, { m: 'Jul', v: 22 }, { m: 'Agu', v: 19 },
-  { m: 'Sep', v: 31 }, { m: 'Okt', v: 27 }, { m: 'Nov', v: 38 },
-];
-
-const CATEGORY_DIST = [
-  { label: 'Kuliner', icon: UtensilsCrossed, count: 94, pct: 53, color: 'bg-yellow-500' },
-  { label: 'Jasa', icon: Wrench, count: 48, pct: 27, color: 'bg-info' },
-  { label: 'Toko', icon: ShoppingBasket, count: 35, pct: 20, color: 'bg-navy-600' },
-];
 
 // satu sumber data untuk semua halaman panel
 const BIZ_INIT = [
@@ -64,16 +54,6 @@ const ACTIVITIES = [
   { icon: Megaphone, color: 'text-yellow-600 bg-yellow-500/15', text: 'Promo baru: Diskon 10% — Warung Nasi Bu Siti', time: '6 jam lalu' },
   { icon: Users, color: 'text-navy-600 bg-blue-200/70', text: '31 pengguna baru hari ini', time: '8 jam lalu' },
 ];
-
-// sparkline mini untuk kartu statistik
-function Spark({ points, up = true }) {
-  const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${(i / (points.length - 1)) * 64},${24 - (p / Math.max(...points)) * 22}`).join(' ');
-  return (
-    <svg viewBox="0 0 64 26" className="w-16 h-6" aria-hidden="true">
-      <path d={d} fill="none" stroke={up ? '#2E9E6B' : '#E05252'} strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 const rise = (delay = 0) => ({
   initial: { opacity: 0, y: 14 },
@@ -114,7 +94,8 @@ export default function AdminDashboard() {
   const [busyReport, setBusyReport] = useState(null);
   const [reviewId, setReviewId] = useState(null);
   const [log, setLog] = useState(() => verificationLog());
-  const [toast, setToast] = useState(null);
+  const [result, setResult] = useState(null);
+  const [statsKey, setStatsKey] = useState(0);
 
   // gabungkan pengajuan nyata (API) & dari form lokal ke antrean demo
   useEffect(() => {
@@ -156,6 +137,7 @@ export default function AdminDashboard() {
       const updated = await resolveReport(r, { status, suspend, note: notes[r.id] ?? '' });
       setReports((list) => list.map((x) => (x.id === r.id ? updated : x)));
       if (suspend) setBiz((list) => list.map((b) => (b.name === r.business_name ? { ...b, status: 'rejected' } : b)));
+      setStatsKey((n) => n + 1);
     } finally {
       setBusyReport(null);
     }
@@ -164,9 +146,9 @@ export default function AdminDashboard() {
   const deleteReview = async (rv) => {
     await removeReview(rv);
     setReviews((list) => list.filter((x) => x.id !== rv.id));
+    setStatsKey((n) => n + 1);
   };
 
-  const maxV = useMemo(() => Math.max(...MONTHS.map((m) => m.v)), []);
   const pending = biz
     .filter((b) => b.status === 'pending')
     .sort((a, b) => new Date(a.submission?.submitted_at ?? 0) - new Date(b.submission?.submitted_at ?? 0));
@@ -183,8 +165,8 @@ export default function AdminDashboard() {
     setStatus(item.id, decision.status, true);
     setLog((l) => [entry, ...l]);
     setReviewId(null);
-    setToast(decision.status === 'approved' ? `${item.name} disetujui & tayang di peta.` : `${item.name} ditolak — catatan dikirim ke produsen.`);
-    setTimeout(() => setToast(null), 3200);
+    setResult({ entry, item });
+    setStatsKey((n) => n + 1);
   };
 
   const saveSettings = () => {
@@ -192,12 +174,8 @@ export default function AdminDashboard() {
     setTimeout(() => setSaved(false), 2200);
   };
 
-  const STATS = [
-    { icon: Building2, label: 'Total Usaha Tayang', val: 174 + biz.filter((b) => b.status === 'approved').length, delta: '+12 minggu ini', up: true, spark: [8, 11, 10, 14, 13, 17, 19], grad: 'from-navy-700 to-navy-900 text-yellow-400' },
-    { icon: Hourglass, label: 'Menunggu Verifikasi', val: pending.length, delta: `SLA ≤ ${settings.sla} jam`, up: pending.length < 5, spark: [6, 5, 7, 4, 5, 3, Math.max(pending.length, 1)], grad: 'from-yellow-400 to-yellow-600 text-navy-800' },
-    { icon: BadgePercent, label: 'Promo Aktif', val: 23, delta: '+5 vs minggu lalu', up: true, spark: [12, 14, 13, 17, 16, 20, 23], grad: 'from-info to-navy-600 text-white' },
-    { icon: Footprints, label: 'Kunjungan Peta', val: '12.4k', delta: '-3% hari ini', up: false, spark: [30, 34, 31, 36, 33, 29, 28], grad: 'from-blue-300 to-blue-400 text-navy-800' },
-  ];
+  const hour = new Date().getHours();
+  const greet = hour < 11 ? 'Selamat pagi' : hour < 15 ? 'Selamat siang' : hour < 18 ? 'Selamat sore' : 'Selamat malam';
 
   const NAV = [
     { key: 'ringkasan', icon: LayoutGrid, label: 'Ringkasan' },
@@ -209,7 +187,7 @@ export default function AdminDashboard() {
   ];
 
   const TITLES = {
-    ringkasan: { h: `Selamat pagi, ${user?.name?.split(' ')[0] ?? 'Admin'} 🛡️`, p: 'Pantau kesehatan ekosistem UMKM-mu hari ini.' },
+    ringkasan: { h: `${greet}, ${user?.name?.split(' ')[0] ?? 'Admin'} 🛡️`, p: 'Pantau kesehatan ekosistem UMKM-mu — semua angka dihitung dari data sistem.' },
     verifikasi: { h: 'Verifikasi Pendaftaran', p: `${pending.length} usaha menunggu tinjauanmu — jaga SLA ≤ ${settings.sla} jam.` },
     usaha: { h: 'Daftar Usaha', p: `${biz.length} usaha terdaftar di wilayahmu.` },
     laporan: { h: 'Laporan & Ulasan', p: reported.length + openReports.length ? `${reported.length + openReports.length} laporan butuh tindak lanjut.` : 'Tidak ada laporan aktif.' },
@@ -266,6 +244,7 @@ export default function AdminDashboard() {
   };
 
   return (
+    <IconContext.Provider value={{ weight: 'duotone' }}>
     <div className="h-screen flex flex-col lg:flex-row bg-blue-50 font-body text-navy-800 overflow-hidden">
       {/* ═══ Header mobile: logo + chip navigasi ═══ */}
       <div className="lg:hidden shrink-0 bg-navy-800 text-blue-300 px-4 pt-3 pb-2.5">
@@ -382,7 +361,7 @@ export default function AdminDashboard() {
 
       {/* ═══ Konten utama ═══ */}
       <main className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-5 py-6">
+        <div className="max-w-6xl mx-auto px-5 py-6">
           {/* topbar */}
           <motion.div {...rise(0)} className="flex flex-wrap items-center gap-x-4 gap-y-3">
             <div className="min-w-0 flex-1">
@@ -458,127 +437,29 @@ export default function AdminDashboard() {
 
           {/* ═══ RINGKASAN ═══ */}
           {view === 'ringkasan' && (
-            <>
-              <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mt-6">
-                {STATS.map((s, i) => (
-                  <motion.div key={s.label} {...rise(0.05 + i * 0.06)} whileHover={{ y: -4 }} className="bg-white border border-blue-200 rounded-2xl p-4">
-                    <div className="flex items-center justify-between">
-                      <span className={`bg-gradient-to-br ${s.grad} p-2.5 rounded-xl shadow-md`}><s.icon size={16} /></span>
-                      <Spark points={s.spark} up={s.up} />
-                    </div>
-                    <p className="font-heading font-extrabold text-2xl mt-3">{s.val}</p>
-                    <p className="text-[11px] font-semibold text-navy-500 mt-0.5">{s.label}</p>
-                    <p className={`flex items-center gap-1 text-[10px] font-bold mt-2 ${s.up ? 'text-success' : 'text-danger'}`}>
-                      {s.up ? <TrendingUp size={11} /> : <TrendingDown size={11} />} {s.delta}
-                    </p>
-                  </motion.div>
-                ))}
-              </div>
-
-              <div className="grid lg:grid-cols-5 gap-4 mt-4">
-                {/* grafik pendaftaran */}
-                <motion.div {...rise(0.3)} className="lg:col-span-3 bg-white border border-blue-200 rounded-2xl p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-heading font-bold text-sm">Pendaftaran Usaha</p>
-                      <p className="text-[11px] text-navy-500 mt-0.5">6 bulan terakhir</p>
-                    </div>
-                    <span className="flex items-center gap-1 text-[11px] font-bold text-success bg-success/10 px-2 py-1 rounded-lg">
-                      <TrendingUp size={11} /> +41%
-                    </span>
-                  </div>
-                  <div className="flex items-end justify-between gap-3 h-40 mt-5">
-                    {MONTHS.map((m, i) => (
-                      <div key={m.m} className="flex-1 h-full flex flex-col items-center justify-end gap-1.5 group">
-                        <span className="text-[10px] font-bold text-navy-700 opacity-0 group-hover:opacity-100 transition-opacity">{m.v}</span>
-                        <motion.div
-                          initial={{ height: 0 }}
-                          animate={{ height: `${(m.v / maxV) * 78}%` }}
-                          transition={{ duration: 0.6, delay: 0.4 + i * 0.07, ease: 'easeOut' }}
-                          className={`w-full rounded-t-lg ${i === MONTHS.length - 1 ? 'bg-yellow-500 shadow-lg shadow-yellow-500/30' : 'bg-blue-300 group-hover:bg-navy-600'} transition-colors`}
-                        />
-                        <span className={`text-[10px] font-semibold ${i === MONTHS.length - 1 ? 'text-navy-800 font-bold' : 'text-navy-500'}`}>{m.m}</span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-
-                {/* distribusi kategori */}
-                <motion.div {...rise(0.36)} className="lg:col-span-2 bg-navy-800 text-blue-50 rounded-2xl p-5 relative overflow-hidden">
-                  <div className="blob-morph-slow absolute -bottom-16 -right-12 w-44 h-44 bg-yellow-500/10 pointer-events-none" aria-hidden="true" />
-                  <p className="relative font-heading font-bold text-sm">Distribusi Kategori</p>
-                  <p className="relative text-[11px] text-blue-300 mt-0.5">{174 + biz.filter((b) => b.status === 'approved').length} usaha tayang</p>
-                  <div className="relative space-y-4 mt-5">
-                    {CATEGORY_DIST.map((c, i) => (
-                      <div key={c.label}>
-                        <div className="flex items-center gap-2 text-xs font-semibold">
-                          <c.icon size={13} className="text-yellow-500" /> {c.label}
-                          <span className="ml-auto font-bold">{c.count}</span>
-                          <span className="text-blue-300 text-[10px]">({c.pct}%)</span>
-                        </div>
-                        <div className="h-2 bg-navy-700 rounded-full mt-1.5 overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${c.pct}%` }}
-                            transition={{ duration: 0.7, delay: 0.5 + i * 0.12, ease: 'easeOut' }}
-                            className={`h-full rounded-full ${c.color}`}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <Link to="/admin/peta" className="relative mt-6 flex items-center justify-center gap-1.5 bg-yellow-500 hover:bg-yellow-400 text-navy-800 text-xs font-bold py-2.5 rounded-xl transition-colors">
-                    <MapIcon size={14} /> Buka Peta Komando <ChevronRight size={13} />
-                  </Link>
-                </motion.div>
-              </div>
-
-              <div className="grid lg:grid-cols-5 gap-4 mt-4 pb-8">
-                {/* antrean verifikasi ringkas */}
-                <motion.div {...rise(0.42)} className="lg:col-span-3 bg-white border border-blue-200 rounded-2xl p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-heading font-bold text-sm">Antrean Verifikasi</p>
-                      <p className="text-[11px] text-navy-500 mt-0.5">
-                        {pending.length} menunggu · sesi ini: <span className="text-success font-bold">{decided.approved} disetujui</span>
-                        {decided.rejected > 0 && <> · <span className="text-danger font-bold">{decided.rejected} ditolak</span></>}
-                      </p>
-                    </div>
-                    <button onClick={() => setView('verifikasi')} className="flex items-center gap-0.5 text-[11px] font-bold text-navy-700 hover:text-yellow-600 transition-colors">
-                      Lihat semua <ChevronRight size={13} />
-                    </button>
-                  </div>
-                  <div className="mt-4 space-y-2">
-                    <AnimatePresence>
-                      {pending.slice(0, 3).map((b) => <QueueRow key={b.id} b={b} />)}
-                    </AnimatePresence>
-                    {pending.length === 0 && (
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-8">
-                        <BadgeCheck size={28} className="mx-auto text-success" />
-                        <p className="text-xs font-bold mt-2">Antrean bersih! 🎉</p>
-                        <p className="text-[11px] text-navy-500 mt-0.5">Semua pendaftaran sudah ditinjau.</p>
-                      </motion.div>
-                    )}
-                  </div>
-                </motion.div>
-
-                {/* aktivitas terbaru */}
-                <motion.div {...rise(0.48)} className="lg:col-span-2 bg-white border border-blue-200 rounded-2xl p-5">
-                  <p className="font-heading font-bold text-sm">Aktivitas Terbaru</p>
-                  <div className="mt-4 space-y-4">
-                    {activityFeed.slice(0, 6).map((a, i) => (
-                      <motion.div key={a.text} {...rise(0.55 + i * 0.06)} className="flex items-start gap-3">
-                        <span className={`shrink-0 p-2 rounded-xl ${a.color}`}><a.icon size={14} /></span>
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold leading-snug">{a.text}</p>
-                          <p className="text-[10px] text-navy-500 mt-0.5">{a.time}</p>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-              </div>
-            </>
+            <AdminOverview
+              sla={settings.sla}
+              refreshKey={statsKey}
+              onOpenQueue={() => setView('verifikasi')}
+              queue={(
+                <div className="space-y-2">
+                  <p className="text-[11px] text-navy-500 -mt-2 mb-2">
+                    {pending.length} menunggu · sesi ini: <span className="text-success font-bold">{decided.approved} disetujui</span>
+                    {decided.rejected > 0 && <> · <span className="text-danger font-bold">{decided.rejected} ditolak</span></>}
+                  </p>
+                  <AnimatePresence>
+                    {pending.slice(0, 3).map((b) => <QueueRow key={b.id} b={b} />)}
+                  </AnimatePresence>
+                  {pending.length === 0 && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-8">
+                      <BadgeCheck size={28} className="mx-auto text-success" />
+                      <p className="text-xs font-bold mt-2">Antrean bersih! 🎉</p>
+                      <p className="text-[11px] text-navy-500 mt-0.5">Semua pendaftaran sudah ditinjau.</p>
+                    </motion.div>
+                  )}
+                </div>
+              )}
+            />
           )}
 
           {/* ═══ VERIFIKASI ═══ */}
@@ -958,18 +839,17 @@ export default function AdminDashboard() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 16 }}
-            role="status"
-            className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[1500] flex items-center gap-2 bg-navy-800 text-blue-50 text-sm font-semibold px-4 py-3 rounded-xl shadow-xl"
-          >
-            <BadgeCheck size={16} className="text-yellow-500" /> {toast}
-          </motion.div>
+        {result && (
+          <DecisionResult
+            key="decision"
+            result={result}
+            nextCount={pending.length}
+            onNext={() => { setResult(null); setReviewId(pending[0]?.id ?? null); }}
+            onClose={() => setResult(null)}
+          />
         )}
       </AnimatePresence>
     </div>
+    </IconContext.Provider>
   );
 }
