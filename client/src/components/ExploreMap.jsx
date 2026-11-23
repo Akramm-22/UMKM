@@ -462,7 +462,6 @@ export default function ExploreMap() {
           needsLocation={needsLocation}
           area={area}
           areaState={areaState}
-          onSuggest={submitSearch}
           onLocate={() => locate(true)}
           onArea={applyManualArea}
           onClearArea={() => { setArea(null); setAreaState({}); }}

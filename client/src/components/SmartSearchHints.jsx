@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Sparkles, LocateFixed, MapPin, X, Loader2, ArrowUpDown } from 'lucide-react';
-import { SUGGESTIONS, describe } from '../../../shared/smartSearch.mjs';
+import { describe } from '../../../shared/smartSearch.mjs';
 
-// baris "dipahami sebagai" + saran kueri + alternatif lokasi manual di atas daftar hasil
-export default function SmartSearchHints({ search, parsed, sortedBy, originLabel, needsLocation, area, areaState, onSuggest, onLocate, onArea, onClearArea }) {
+// baris "dipahami sebagai" + alternatif lokasi manual di atas daftar hasil
+export default function SmartSearchHints({ search, parsed, sortedBy, originLabel, needsLocation, area, areaState, onLocate, onArea, onClearArea }) {
   const [areaText, setAreaText] = useState('');
   const q = search.trim();
   const chips = q ? describe(parsed) : [];
@@ -13,20 +13,11 @@ export default function SmartSearchHints({ search, parsed, sortedBy, originLabel
     if (areaText.trim()) onArea(areaText.trim());
   };
 
+  if (!q && !area && !areaState.loading && !areaState.error && !needsLocation) return null;
+
   return (
     <div className="px-4 py-3 border-b border-blue-200 bg-blue-50/60 space-y-2.5">
-      {!q ? (
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-wider text-navy-500 flex items-center gap-1"><Sparkles size={12} className="text-yellow-600" /> Coba cari</p>
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            {SUGGESTIONS.map((s) => (
-              <button key={s} type="button" onClick={() => onSuggest(s)} className="text-xs font-semibold text-navy-700 bg-white border border-blue-200 hover:border-navy-500 px-2.5 py-1 rounded-full transition-colors">
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : (
+      {q && (
         <div>
           <p className="text-[11px] font-bold uppercase tracking-wider text-navy-500 flex items-center gap-1"><Sparkles size={12} className="text-yellow-600" /> Dipahami sebagai</p>
           <div className="flex flex-wrap gap-1.5 mt-2" aria-live="polite">

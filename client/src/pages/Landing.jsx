@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform, AnimatePresence, useMotionValueEvent } from 'motion/react';
 import {
   MapPin, Search, Store, ArrowRight, Star, BadgeCheck, Clock,
-  Phone, ChevronRight, Globe, MessageCircle, Mail, Wallet, Send, Heart, MousePointer2,
+  Phone, ChevronRight, Globe, MessageCircle, Mail, Wallet, Send, MousePointer2,
   ChefHat, CupSoda, Wheat, Hammer, Scissors, WashingMachine, Cookie, Shirt,
   Leaf, Flame, Citrus, X, LayoutGrid, LogOut, Sparkles,
 } from 'lucide-react';
@@ -12,6 +12,7 @@ import { DEMO_BUSINESSES, toCard } from '../lib/demoPlaces.js';
 import SectionTag from '../components/landing/SectionTag.jsx';
 import TrendingSection from '../components/landing/TrendingSection.jsx';
 import JourneySection from '../components/landing/JourneySection.jsx';
+import PhotoStory from '../components/landing/PhotoStory.jsx';
 import { SUGGESTIONS } from '../../../shared/smartSearch.mjs';
 
 const MotionLink = motion.create(Link);
@@ -629,6 +630,9 @@ export default function Landing() {
       {/* ═══ 04 Perjalanan usaha — milestone interaktif + kisah pencapaian ═══ */}
       <JourneySection />
 
+      {/* ═══ Cerita foto: scroll-driven image storytelling (4 foto) ═══ */}
+      <PhotoStory />
+
       {/* ═══ CTA ═══ */}
       <section className="bg-blue-50 border-t border-blue-200">
         <div className="max-w-6xl mx-auto px-5 py-16">
@@ -677,23 +681,6 @@ export default function Landing() {
           </form>
         </div>
       </section>
-
-      {/* ═══ Galeri foto UMKM ala Broccoli ═══ */}
-      <div className="grid grid-cols-4 lg:grid-cols-8">
-        {[
-          { img: PHOTOS.nasi, likes: 61 }, { img: PHOTOS.sate, likes: 54 }, { img: PHOTOS.kopi, likes: 48 },
-          { img: PHOTOS.kue, likes: 61 }, { img: PHOTOS.mie, likes: 56 }, { img: PHOTOS.pasar, likes: 43 },
-          { img: PHOTOS.warung, likes: 51 }, { img: PHOTOS.laundry, likes: 39 },
-        ].map((g, i) => (
-          <a key={i} href="#" className="group relative aspect-square overflow-hidden" aria-label="Galeri usaha lokal">
-            <img src={g.img} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-            <span className="absolute inset-0 bg-navy-900/0 group-hover:bg-navy-900/40 transition-colors" />
-            <span className="absolute bottom-2 left-2.5 text-white text-xs font-bold flex items-center gap-1 opacity-80 group-hover:opacity-100">
-              {g.likes} <Heart size={12} className="fill-white" />
-            </span>
-          </a>
-        ))}
-      </div>
 
       {/* ═══ Footer bidang kuning ala Broccoli ═══ */}
       <footer className="relative overflow-hidden bg-yellow-500 text-navy-800">

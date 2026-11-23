@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useInView, useReducedMotion } from 'motion/react';
 import {
   UserPlus, Store, ShieldCheck, MapPin, TrendingUp, CircleCheck, Clock, Gift, ArrowRight, ArrowLeft,
-  Pause, Play, Camera, Star, Eye, Tag, MessageCircle, Navigation, Trophy, Sparkles,
+  Pause, Play, Camera, Eye, MessageCircle, Navigation,
 } from 'lucide-react';
 import SectionTag from './SectionTag.jsx';
 
@@ -45,15 +45,6 @@ const STEPS = [
     checklist: ['Pasang & ganti promo kapan saja', 'Kumpulkan ulasan bintang dari pembeli', 'Statistik kunjungan & klik rute'],
     result: 'Usaha makin dikenal, pelanggan makin setia.',
   },
-];
-
-const STORY = [
-  { when: 'Hari 1', icon: UserPlus, metric: '10 mnt', title: 'Akun & profil jadi', text: 'Bu Siti mendaftar dari HP sambil menunggu nasi matang.', tone: 'from-yellow-400 to-yellow-600 text-navy-800' },
-  { when: 'Hari 2', icon: ShieldCheck, metric: '18 jam', title: 'Lolos verifikasi', text: 'Warung Nasi Bu Siti resmi tayang di peta PesanLokal.', tone: 'from-info to-navy-700 text-white' },
-  { when: 'Minggu 1', icon: Navigation, metric: '57', title: 'Orang membuka rute', text: 'Pembeli baru dari kompleks sebelah mulai berdatangan.', tone: 'from-emerald-500 to-emerald-700 text-white' },
-  { when: 'Bulan 1', icon: Star, metric: '4,8★', title: 'Ulasan pertama', text: '32 ulasan — "lauknya rumahan banget, porsinya pas".', tone: 'from-amber-500 to-orange-600 text-white' },
-  { when: 'Bulan 3', icon: Tag, metric: '+32%', title: 'Promo pertama', text: 'Diskon 10% nasi uduk menaikkan pembeli pagi.', tone: 'from-pink-500 to-rose-600 text-white' },
-  { when: 'Bulan 6', icon: Trophy, metric: 'Top 3', title: 'Lagi rame di Menteng', text: 'Kini menerima pesanan nasi kotak untuk acara warga.', tone: 'from-navy-700 to-navy-900 text-yellow-500' },
 ];
 
 // pratinjau mini tiap tahap — gambaran layar yang akan ditemui pemilik usaha
@@ -321,45 +312,6 @@ export default function JourneySection() {
               </motion.div>
             </AnimatePresence>
           </div>
-        </div>
-
-        {/* kisah pencapaian: dari awal berdiri hingga kini */}
-        <div className="mt-16">
-          <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=160&q=70" alt="" className="w-12 h-12 rounded-full object-cover ring-4 ring-yellow-500/30" />
-              <div>
-                <p className="text-[11px] font-extrabold uppercase tracking-widest text-yellow-600 flex items-center gap-1"><Sparkles size={12} /> Kisah pencapaian</p>
-                <p className="font-heading font-extrabold text-lg">Warung Nasi Bu Siti — 6 bulan di PesanLokal</p>
-              </div>
-            </div>
-            <p className="text-xs text-navy-500 max-w-xs">Contoh ilustratif perkembangan usaha mikro setelah tayang di peta.</p>
-          </motion.div>
-
-          <ol className="mt-6 grid grid-flow-col auto-cols-[78%] sm:auto-cols-[45%] lg:grid-flow-row lg:grid-cols-3 gap-4 overflow-x-auto lg:overflow-visible snap-x -mx-5 px-5 lg:mx-0 lg:px-0 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {STORY.map((s, i) => (
-              <motion.li
-                key={s.when}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 0.4, delay: (i % 3) * 0.08 }}
-                whileHover={{ y: -6 }}
-                className="snap-start isolate relative bg-white border border-blue-200 rounded-3xl p-5 shadow-sm hover:shadow-xl hover:shadow-navy-800/10 transition-shadow"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <span className="text-[11px] font-extrabold uppercase tracking-widest text-navy-500 bg-blue-100 px-2.5 py-1 rounded-full">{s.when}</span>
-                  <span className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${s.tone} flex items-center justify-center shadow-md`}>
-                    <s.icon size={19} />
-                  </span>
-                </div>
-                <p className="font-heading font-extrabold text-3xl mt-4 text-navy-800">{s.metric}</p>
-                <p className="font-heading font-bold text-sm mt-1">{s.title}</p>
-                <p className="text-xs text-navy-500 leading-relaxed mt-1.5">{s.text}</p>
-                <span className="absolute -z-10 bottom-4 right-5 font-heading font-extrabold text-5xl text-blue-100 select-none pointer-events-none" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
-              </motion.li>
-            ))}
-          </ol>
         </div>
       </div>
     </section>
