@@ -109,3 +109,28 @@ body {
 }
 .blob-morph { animation: blob-morph 10s ease-in-out infinite; }
 .blob-morph-slow { animation: blob-morph 16s ease-in-out 2s infinite; }
+
+/* ── Peta: pin, klaster, tooltip, rute ── */
+.pl-pin { background: none; border: 0; }
+.pl-pin-wrap { position: relative; filter: drop-shadow(0 3px 4px rgba(10, 20, 40, .35)); transition: transform .15s ease-out; transform-origin: 50% 100%; }
+.pl-pin-wrap.is-sel { animation: pin-drop .35s ease-out; }
+.pl-pin-emoji { position: absolute; left: 0; right: 0; text-align: center; line-height: 1; }
+.pl-pin-dot { position: absolute; right: 1px; top: 1px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #fff; }
+.pl-pin-fav { position: absolute; left: -4px; top: -4px; width: 16px; height: 16px; border-radius: 50%; background: var(--color-danger); color: #fff; font-size: 9px; line-height: 13px; text-align: center; border: 1.5px solid #fff; }
+.pl-pin-label { position: absolute; left: calc(100% + 2px); top: 18%; white-space: nowrap; font: 700 12px/1.2 Inter, sans-serif; color: var(--color-navy-800); text-shadow: 0 0 2px #fff, 0 0 2px #fff, 0 0 3px #fff, 0 0 3px #fff; pointer-events: none; }
+.pl-pin-label.is-sel { font-size: 13px; color: var(--color-navy-900); }
+@keyframes pin-drop { 0% { transform: translateY(-14px) scale(.9); } 60% { transform: translateY(2px); } 100% { transform: none; } }
+.pl-cluster { display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--color-navy-800); color: var(--color-yellow-500); font: 800 13px Inter, sans-serif; border: 3px solid #fff; box-shadow: 0 0 0 5px rgba(15, 30, 61, .18), 0 4px 10px rgba(10, 20, 40, .3); cursor: pointer; transition: transform .15s; }
+.pl-cluster:hover { transform: scale(1.08); }
+.leaflet-tooltip.pl-tip { padding: 8px; border-radius: 12px; border: 0; box-shadow: 0 8px 24px rgba(10, 20, 40, .22); }
+.leaflet-tooltip.pl-tip::before { border-top-color: #fff; }
+.pl-route-label { position: absolute; transform: translate(-50%, -120%); white-space: nowrap; display: flex; flex-direction: column; align-items: center; padding: 4px 9px; border-radius: 10px; background: #fff; color: var(--color-navy-700); font: 600 11px/1.25 Inter, sans-serif; box-shadow: 0 3px 10px rgba(10, 20, 40, .25); cursor: pointer; }
+.pl-route-label b { font-size: 12.5px; }
+.pl-route-label span { font-size: 10px; color: var(--color-navy-500); }
+.pl-route-label.is-active { background: var(--color-navy-800); color: #fff; cursor: default; }
+.pl-route-label.is-active span { color: var(--color-blue-300); }
+.pl-step { display: block; width: 100%; height: 100%; border-radius: 50%; background: #fff; border: 2.5px solid var(--color-navy-800); box-sizing: border-box; cursor: pointer; }
+.pl-step.is-focus { background: var(--color-yellow-500); border-width: 3px; box-shadow: 0 0 0 6px rgba(255, 201, 20, .35); }
+.pl-dest { width: 26px; height: 26px; border-radius: 50%; background: var(--color-danger); border: 3px solid #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(10, 20, 40, .35); }
+.leaflet-container { font-family: var(--font-body); background: #E9EEF2; }
+.leaflet-control-scale-line { border-color: var(--color-navy-700); color: var(--color-navy-700); background: rgba(255, 255, 255, .8); font-size: 10px; }

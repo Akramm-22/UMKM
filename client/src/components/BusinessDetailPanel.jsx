@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { REPORT_REASONS, fetchReviews, submitReview, submitReport, hasOpenLocalReport } from '../lib/feedback.js';
-import { fetchRoute, fmtDistance, fmtDuration } from '../lib/routing.js';
+import { fetchRoute, fmtDistance, fmtDuration, arrivalTime } from '../lib/routing.js';
 import { weeklyHours, openStatus, todayKey, distanceKm, getFavorites, toggleFavorite, formatRupiah } from '../lib/place.js';
 import { PAYMENT_OPTIONS, AMENITY_OPTIONS, labelOf } from '../lib/businessForm.js';
 
@@ -112,13 +112,13 @@ const stepIcon = (s) => {
 export default function BusinessDetailPanel({
   biz, category, userPos, hasPreciseLocation, local, search, onSearch,
   route, routing, routeError, routeMode, onRouteMode, onRoute, onClearRoute, onClose, onNearby, onLocate,
-  onFavoritesChange, startInDirections = false,
+  onFavoritesChange, startInDirections = false, onPickAlt, onStartNav, focusStep, onFocusStep, onViewChange,
 }) {
   const { user } = useAuth();
   const [view, setView] = useState(startInDirections ? 'directions' : 'place');
   const [tab, setTab] = useState('ringkasan');
   const [hoursOpen, setHoursOpen] = useState(false);
-  const [stepsOpen, setStepsOpen] = useState(false);
+  const [stepsOpen, setStepsOpen] = useState(true);
   const [toast, setToast] = useState(null);
   const [saved, setSaved] = useState(false);
   const [estimates, setEstimates] = useState({});
@@ -137,7 +137,7 @@ export default function BusinessDetailPanel({
     setView(startInDirections ? 'directions' : 'place');
     setTab('ringkasan');
     setHoursOpen(false);
-    setStepsOpen(false);
+    setStepsOpen(true);
     setEstimates({});
     setForm({ rating: 0, comment: '' });
     setReviewState({ sending: false, error: '', done: false });
@@ -165,6 +165,8 @@ export default function BusinessDetailPanel({
     });
     return () => ctrl.abort();
   }, [view, biz, userPos]);
+
+  useEffect(() => { onViewChange?.(view); }, [view, onViewChange]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -398,6 +400,13 @@ export default function BusinessDetailPanel({
                     </div>
                   )}
 
+                  {biz.description && (
+                    <p className="px-6 pb-4 text-sm text-navy-700 leading-relaxed line-clamp-3">
+                      {biz.description}{' '}
+                      <button type="button" onClick={() => setTab('tentang')} className="font-semibold text-info hover:underline">Selengkapnya</button>
+                    </p>
+                  )}
+
                   {services.length > 0 && (
                     <button type="button" onClick={() => setTab('tentang')} className="w-full flex items-center gap-3 px-6 py-3 border-t border-blue-200 hover:bg-blue-50 text-left transition-colors">
                       <div className="flex-1 flex flex-wrap gap-x-2 gap-y-1 text-sm text-navy-800">
@@ -417,7 +426,11 @@ export default function BusinessDetailPanel({
                     <Row icon={MapPin} action={<Copy size={16} />} actionLabel="Salin alamat" onAction={() => copy(biz.address ?? `${biz.latitude}, ${biz.longitude}`, 'Alamat disalin')}>
                       {biz.address ?? <span className="text-navy-500">Alamat belum diisi pemilik</span>}
                       {biz.address_detail?.landmark && <span className="block text-xs text-navy-700 mt-0.5">Patokan: {biz.address_detail.landmark}</span>}
-                      <span className="block text-xs text-navy-500 mt-0.5">± {fmtDistance(straight)} dari lokasimu</span>
+                      <span className="block text-xs text-navy-500 mt-0.5">
+                        {routeForThis
+                          ? `${fmtDistance(route.km)} lewat jalan · ${fmtDuration(route.min)} ${ROUTE_MODES.find((m) => m.key === route.mode)?.label.toLowerCase() ?? ''}`
+                          : `± ${fmtDistance(straight)} garis lurus ${hasPreciseLocation ? 'dari lokasimu' : 'dari titik perkiraan'}`}
+                      </span>
                     </Row>
 
                     {status ? (
@@ -727,47 +740,75 @@ export default function BusinessDetailPanel({
 
               {!routing && routeForThis && (
                 <div className="bg-white border-b border-blue-200">
-                  <div className="px-5 py-4 flex items-start gap-4">
-                    {(() => { const M = ROUTE_MODES.find((m) => m.key === route.mode)?.icon ?? Car; return <M size={22} className="text-navy-700 mt-1" />; })()}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-navy-700">
-                        <span className="font-heading font-bold text-xl text-success">{fmtDuration(route.min)}</span>
-                        <span className="text-navy-500 ml-1.5">({fmtDistance(route.km)})</span>
-                      </p>
-                      <p className="text-xs text-navy-500 mt-0.5">
-                        {route.steps.find((s) => s.text.includes(' ke ') || s.text.includes(' melalui '))?.text.replace(/^.*?(ke|melalui) /, 'Lewat ') ?? 'Rute tercepat'}
-                      </p>
-                      {route.mode === 'motorcycle' && <p className="text-[11px] text-navy-500 mt-1">Estimasi motor memakai jalur kendaraan bermotor.</p>}
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        <a href={gmapsDir} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 bg-navy-800 hover:bg-navy-700 text-blue-50 text-xs font-bold px-4 py-2 rounded-full transition-colors">
-                          <Navigation size={13} /> Mulai di Google Maps
-                        </a>
-                        <a href={sendToPhone} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 border border-blue-300 hover:bg-blue-50 text-navy-700 text-xs font-bold px-4 py-2 rounded-full transition-colors">
-                          <Send size={13} /> Kirim ke HP
-                        </a>
-                        <button type="button" onClick={() => { onClearRoute(); setView('place'); }} className="inline-flex items-center gap-1.5 text-navy-500 hover:text-danger text-xs font-bold px-2 py-2 rounded-full transition-colors">
-                          <X size={13} /> Hapus rute
-                        </button>
-                      </div>
-                    </div>
+                  {/* pilihan rute ala Google Maps: tiap opsi dengan durasi, jarak, jalan utama */}
+                  <ul className="divide-y divide-blue-100" role="radiogroup" aria-label="Pilihan rute">
+                    {route.routes.map((r, i) => {
+                      const on = i === route.active;
+                      const M = ROUTE_MODES.find((m) => m.key === route.mode)?.icon ?? Car;
+                      return (
+                        <li key={i}>
+                          <button
+                            type="button"
+                            role="radio"
+                            aria-checked={on}
+                            onClick={() => onPickAlt?.(i)}
+                            className={`w-full text-left px-5 py-3.5 flex items-start gap-4 transition-colors ${on ? 'bg-blue-50 border-l-4 border-info pl-4' : 'hover:bg-blue-50'}`}
+                          >
+                            <M size={21} className={`mt-1 ${on ? 'text-info' : 'text-navy-500'}`} />
+                            <span className="flex-1 min-w-0">
+                              <span className="block text-sm">
+                                <span className={`font-heading font-bold text-lg ${on ? 'text-success' : 'text-navy-800'}`}>{fmtDuration(r.min)}</span>
+                                <span className="text-navy-500 ml-1.5">({fmtDistance(r.km)})</span>
+                              </span>
+                              <span className="block text-xs text-navy-500 mt-0.5 truncate">
+                                {r.via ? `via ${r.via}` : 'Rute jalan lokal'} · tiba ± {arrivalTime(r.min)}
+                              </span>
+                              {i === 0 && route.routes.length > 1 && <span className="inline-block mt-1 text-[10px] font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">Tercepat</span>}
+                              {i > 0 && <span className="inline-block mt-1 text-[10px] font-bold text-navy-500 bg-blue-100 px-2 py-0.5 rounded-full">Alternatif · +{Math.max(0, r.min - route.routes[0].min)} mnt</span>}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {route.mode === 'motorcycle' && <p className="px-5 pb-2 text-[11px] text-navy-500">Estimasi motor memakai jalur kendaraan bermotor (profil mobil OSRM).</p>}
+                  <div className="flex flex-wrap gap-2 px-5 py-3 border-t border-blue-100">
+                    <button type="button" onClick={onStartNav} className="inline-flex items-center gap-1.5 bg-navy-800 hover:bg-navy-700 text-blue-50 text-xs font-bold px-4 py-2 rounded-full transition-colors">
+                      <Navigation size={13} /> Mulai navigasi
+                    </button>
+                    <a href={gmapsDir} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 border border-blue-300 hover:bg-blue-50 text-navy-700 text-xs font-bold px-4 py-2 rounded-full transition-colors">
+                      <ExternalLink size={13} /> Google Maps
+                    </a>
+                    <a href={sendToPhone} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 border border-blue-300 hover:bg-blue-50 text-navy-700 text-xs font-bold px-4 py-2 rounded-full transition-colors">
+                      <Send size={13} /> Kirim ke HP
+                    </a>
+                    <button type="button" onClick={() => { onClearRoute(); setView('place'); }} className="inline-flex items-center gap-1.5 text-navy-500 hover:text-danger text-xs font-bold px-2 py-2 rounded-full transition-colors">
+                      <X size={13} /> Hapus rute
+                    </button>
                   </div>
 
                   {route.steps.length > 0 && (
                     <>
                       <button type="button" onClick={() => setStepsOpen((v) => !v)} className="w-full flex items-center justify-between px-5 py-3 border-t border-blue-200 text-sm font-semibold text-navy-700 hover:bg-blue-50 transition-colors" aria-expanded={stepsOpen}>
-                        Detail langkah ({route.steps.length})
+                        Petunjuk arah ({route.steps.length} langkah)
                         <ChevronDown size={17} className={`transition-transform ${stepsOpen ? 'rotate-180' : ''}`} />
                       </button>
                       <AnimatePresence initial={false}>
                         {stepsOpen && (
-                          <motion.ol initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden px-5 pb-3">
+                          <motion.ol initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pb-3">
+                            <li className="flex items-center gap-3 px-5 py-2.5 text-sm text-navy-800">
+                              <span className="w-4 h-4 rounded-full border-[3px] border-info bg-white shrink-0" /> {hasPreciseLocation ? 'Lokasi kamu' : 'Titik perkiraan'}
+                            </li>
                             {route.steps.map((s, i) => {
                               const Icon = stepIcon(s);
+                              const on = i === focusStep;
                               return (
-                                <li key={i} className="flex items-start gap-3 py-2.5 border-b border-blue-100 last:border-0">
-                                  <Icon size={17} className="text-navy-600 shrink-0 mt-0.5" />
-                                  <div className="flex-1 text-sm text-navy-800">{s.text}</div>
-                                  {s.m > 0 && <span className="text-xs text-navy-500 shrink-0">{fmtDistance(s.m / 1000)}</span>}
+                                <li key={i}>
+                                  <button type="button" onClick={() => onFocusStep?.(i)} className={`w-full text-left flex items-start gap-3 px-5 py-2.5 border-t border-blue-100 transition-colors ${on ? 'bg-yellow-300/30' : 'hover:bg-blue-50'}`} title="Tampilkan di peta">
+                                    <Icon size={17} className={`shrink-0 mt-0.5 ${on ? 'text-navy-800' : 'text-navy-600'}`} />
+                                    <span className="flex-1 text-sm text-navy-800">{s.text}</span>
+                                    {s.m > 0 && <span className="text-xs text-navy-500 shrink-0">{fmtDistance(s.m / 1000)}</span>}
+                                  </button>
                                 </li>
                               );
                             })}
@@ -780,7 +821,7 @@ export default function BusinessDetailPanel({
               )}
 
               <div className="p-5 text-xs text-navy-500 leading-relaxed">
-                Estimasi dihitung dari data jalan OpenStreetMap dan belum memperhitungkan kemacetan. Untuk navigasi suara, gunakan <a href={gmapsDir} target="_blank" rel="noreferrer" className="font-semibold text-info hover:underline">Google Maps</a>.
+                Jarak & waktu dihitung dari data jalan OpenStreetMap (OSRM) tanpa data lalu lintas langsung, jadi waktu tempuh bisa berbeda saat macet. Untuk navigasi suara, gunakan <a href={gmapsDir} target="_blank" rel="noreferrer" className="font-semibold text-info hover:underline">Google Maps</a>.
               </div>
             </div>
           </motion.div>

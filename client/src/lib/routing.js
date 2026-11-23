@@ -28,14 +28,23 @@ const parse = (r) => ({
   coords: r.geometry.coordinates.map(([lng, lat]) => [lat, lng]),
   km: r.distance / 1000,
   min: Math.max(1, Math.round(r.duration / 60)),
+  via: r.legs?.[0]?.summary || '',
   steps: (r.legs?.[0]?.steps ?? [])
     .filter((s) => s.maneuver.type !== 'depart' || s.name)
-    .map((s) => ({ text: stepText(s), m: Math.round(s.distance), type: s.maneuver.type, modifier: s.maneuver.modifier })),
+    .map((s) => ({
+      text: stepText(s),
+      m: Math.round(s.distance),
+      type: s.maneuver.type,
+      modifier: s.maneuver.modifier,
+      at: [s.maneuver.location[1], s.maneuver.location[0]],
+      road: s.name || '',
+    })),
 });
 
-export async function fetchRoute(from, to, mode, { signal } = {}) {
+// semua rute (utama + alternatif bila server punya); null bila tidak ada jalur
+export async function fetchRoutes(from, to, mode, { signal, alternatives = true } = {}) {
   const pair = `${from[1]},${from[0]};${to[1]},${to[0]}`;
-  const query = '?overview=full&geometries=geojson&steps=true';
+  const query = `?overview=full&geometries=geojson&steps=true${alternatives ? '&alternatives=true' : ''}`;
   const urls = [`https://routing.openstreetmap.de/${FOSSGIS[mode] ?? 'routed-car'}/route/v1/driving/${pair}${query}`];
   if (mode === 'driving' || mode === 'motorcycle') urls.push(`https://router.project-osrm.org/route/v1/driving/${pair}${query}`);
 
@@ -45,8 +54,8 @@ export async function fetchRoute(from, to, mode, { signal } = {}) {
       const res = await fetch(url, { signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      if (data.code !== 'Ok' || !data.routes?.[0]) return null;
-      return parse(data.routes[0]);
+      if (data.code !== 'Ok' || !data.routes?.length) return null;
+      return data.routes.slice(0, 3).map(parse);
     } catch (err) {
       if (err.name === 'AbortError') throw err;
       lastError = err;
@@ -54,6 +63,14 @@ export async function fetchRoute(from, to, mode, { signal } = {}) {
   }
   throw lastError;
 }
+
+export async function fetchRoute(from, to, mode, opts = {}) {
+  const routes = await fetchRoutes(from, to, mode, { ...opts, alternatives: false });
+  return routes?.[0] ?? null;
+}
+
+export const arrivalTime = (min, now = new Date()) =>
+  new Date(now.getTime() + min * 60000).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
 export const fmtDistance = (km) => (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1).replace('.', ',')} km`);
 export const fmtDuration = (min) => (min < 60 ? `${min} mnt` : `${Math.floor(min / 60)} j ${min % 60} mnt`);

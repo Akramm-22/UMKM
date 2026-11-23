@@ -5,9 +5,14 @@ import {
   MapPin, Search, Store, ArrowRight, Star, BadgeCheck, Clock,
   Phone, ChevronRight, Globe, MessageCircle, Mail, Wallet, Send, Heart, MousePointer2,
   ChefHat, CupSoda, Wheat, Hammer, Scissors, WashingMachine, Cookie, Shirt,
-  Leaf, Flame, Citrus, X, LayoutGrid, LogOut, UserPlus, ShieldCheck, Rocket,
+  Leaf, Flame, Citrus, X, LayoutGrid, LogOut, Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { DEMO_BUSINESSES, toCard } from '../lib/demoPlaces.js';
+import SectionTag from '../components/landing/SectionTag.jsx';
+import TrendingSection from '../components/landing/TrendingSection.jsx';
+import JourneySection from '../components/landing/JourneySection.jsx';
+import { SUGGESTIONS } from '../../../shared/smartSearch.mjs';
 
 const MotionLink = motion.create(Link);
 
@@ -35,13 +40,8 @@ const CATEGORIES = [
   { icon: Shirt, label: 'Jahit', count: 8, grad: 'from-purple-500 to-purple-700' },
 ];
 
-const FEATURED = [
-  { img: PHOTOS.nasi, name: 'Warung Nasi Bu Siti', cat: 'Warung Makan', rating: 4.8, reviews: 120, dist: '350 m', promo: 'Diskon 10%', open: true, hours: '06.00–21.00', desc: 'Masakan rumahan lengkap — ayam bakar, sayur asem, sambal dadak. Porsi besar, harga kaki lima.' },
-  { img: PHOTOS.sate, name: 'Sate Ayam Bang Jali', cat: 'Warung Makan', rating: 4.9, reviews: 210, dist: '550 m', promo: 'Beli 10 gratis 2', open: true, hours: '17.00–23.00', desc: 'Sate ayam bumbu kacang legendaris, dibakar pakai arang batok kelapa. Ramai tiap malam, bisa pesan antar.' },
-  { img: PHOTOS.kopi, name: 'Kopi Kampung Senja', cat: 'Kopi & Minuman', rating: 4.7, reviews: 64, dist: '700 m', promo: null, open: true, hours: '10.00–22.00', desc: 'Kopi robusta lokal, es kopi susu gula aren jadi favorit. Spot nongkrong santai dengan wifi kencang.' },
-  { img: PHOTOS.laundry, name: 'Laundry Kilat 24', cat: 'Laundry', rating: 4.6, reviews: 45, dist: '400 m', promo: 'Gratis antar 1 km', open: false, hours: '24 jam', desc: 'Cuci kering lipat 24 jam, paket ekspres selesai 3 jam. Gratis antar-jemput radius 1 km.' },
-  { img: PHOTOS.pasar, name: 'Sembako Berkah', cat: 'Sembako', rating: 4.7, reviews: 89, dist: '600 m', promo: null, open: true, hours: '05.30–20.00', desc: 'Sembako lengkap harga grosir — beras, minyak, gas. Bisa pesan antar via WhatsApp.' },
-];
+// sumber data sama dengan peta; diurutkan dari yang paling ramai
+const FEATURED = DEMO_BUSINESSES.map((b) => toCard(b)).sort((a, b) => b.reviews * b.rating - a.reviews * a.rating);
 
 const reveal = {
   initial: { opacity: 0, y: 16 },
@@ -56,22 +56,6 @@ const hero = (delay = 0) => ({
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.45, ease: 'easeOut', delay },
 });
-
-// label section bernomor ala editorial (ref: Every Sunday)
-function SectionTag({ n, label, light = false }) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className={`w-9 h-9 rounded-full border-2 flex items-center justify-center font-heading font-extrabold text-xs ${
-        light ? 'border-yellow-500 text-yellow-500' : 'border-navy-800 text-navy-800'
-      }`}>
-        {n}
-      </span>
-      <span className={`text-xs font-bold uppercase tracking-widest ${light ? 'text-yellow-500' : 'text-navy-500'}`}>
-        {label}
-      </span>
-    </div>
-  );
-}
 
 export default function Landing() {
   const { user, logout } = useAuth();
@@ -91,10 +75,6 @@ export default function Landing() {
   // detail usaha yang dibuka dari kartu "Lagi rame"
   const [selected, setSelected] = useState(null);
 
-  // favorit lokal pada kartu "Lagi rame"
-  const [favs, setFavs] = useState({});
-  const toggleFav = (name) => setFavs((f) => ({ ...f, [name]: !f[name] }));
-
   // preview aplikasi membesar mengikuti scroll (ref: video REDSUN)
   const demoRef = useRef(null);
   const { scrollYProgress: demoProg } = useScroll({ target: demoRef, offset: ['start end', 'center center'] });
@@ -104,7 +84,7 @@ export default function Landing() {
 
   const goSearch = (e) => {
     e.preventDefault();
-    navigate('/explore');
+    navigate(q.trim() ? `/explore?q=${encodeURIComponent(q.trim())}` : '/explore');
   };
 
   return (
@@ -262,7 +242,8 @@ export default function Landing() {
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Cari nasi uduk, laundry, pangkas rambut…"
+                placeholder="Coba: warung terdekat, kuliner murah…"
+                aria-label="Cari usaha"
                 className="w-full outline-none text-navy-800 placeholder:text-navy-500/50"
               />
               <motion.button
@@ -274,6 +255,15 @@ export default function Landing() {
                 Cari
               </motion.button>
             </motion.form>
+
+            <motion.div {...hero(0.21)} className="mt-3 flex flex-wrap items-center gap-1.5 max-w-md">
+              <Sparkles size={14} className="text-yellow-600" aria-hidden="true" />
+              {SUGGESTIONS.slice(0, 4).map((s) => (
+                <Link key={s} to={`/explore?q=${encodeURIComponent(s)}`} className="text-xs font-semibold text-navy-700 bg-white border border-blue-200 hover:border-navy-500 px-2.5 py-1 rounded-full transition-colors">
+                  {s}
+                </Link>
+              ))}
+            </motion.div>
 
             <motion.div {...hero(0.24)} className="flex items-center gap-5 mt-8">
               <div className="flex -space-x-2.5">
@@ -555,92 +545,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ═══ Lagi rame — grid kartu editorial (ref: Airbnb/Dribbble food cards) ═══ */}
-      <section id="promo" className="bg-blue-50 border-y border-blue-200 py-16">
-        <div className="max-w-6xl mx-auto px-5">
-          <motion.div {...reveal}>
-            <SectionTag n="02" label="Pilihan Minggu Ini" />
-            <h2 className="font-heading font-extrabold text-2xl mt-3">
-              <span className="italic text-yellow-600">Lagi rame</span> di sekitarmu
-            </h2>
-            <p className="text-navy-500 text-sm mt-1.5">Rating tertinggi & promo aktif minggu ini.</p>
-          </motion.div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-8">
-            {FEATURED.map((b, i) => (
-              <motion.div
-                key={b.name}
-                {...reveal}
-                transition={{ ...reveal.transition, delay: i * 0.06 }}
-                whileHover={{ y: -8 }}
-                onClick={() => setSelected(b)}
-                className="group bg-white rounded-3xl overflow-hidden border border-blue-200 hover:border-transparent shadow-sm hover:shadow-2xl hover:shadow-navy-800/15 transition-all duration-300 cursor-pointer"
-              >
-                {/* foto dengan badge & tombol favorit */}
-                <div className="relative h-44 overflow-hidden">
-                  <img src={b.img} alt={b.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-navy-900/35 to-transparent" aria-hidden="true" />
-                  {b.promo && (
-                    <span className="absolute top-3.5 left-3.5 bg-yellow-500 text-navy-800 text-[11px] font-bold px-2.5 py-1 rounded-full shadow-lg shadow-yellow-500/30">
-                      {b.promo}
-                    </span>
-                  )}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); toggleFav(b.name); }}
-                    aria-label="Favorit"
-                    className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/85 backdrop-blur-sm flex items-center justify-center shadow hover:scale-110 active:scale-90 transition-transform"
-                  >
-                    <Heart size={15} className={favs[b.name] ? 'text-danger fill-danger' : 'text-navy-700'} />
-                  </button>
-                  {/* pill rating menggantung di tepi foto */}
-                  <span className="absolute -bottom-3.5 right-4 bg-white text-navy-800 text-xs font-extrabold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1">
-                    <Star size={12} className="text-yellow-500 fill-yellow-500" /> {b.rating}
-                    <span className="text-navy-500 font-semibold">({b.reviews})</span>
-                  </span>
-                </div>
-
-                <div className="p-5 pt-6">
-                  <p className="font-heading font-extrabold text-base leading-tight">{b.name}</p>
-                  <p className="text-xs text-navy-500 mt-1.5 flex items-center gap-1.5">
-                    {b.cat} <span className="w-1 h-1 rounded-full bg-blue-300" /> <MapPin size={11} /> {b.dist}
-                    <span className="w-1 h-1 rounded-full bg-blue-300" /> {b.hours}
-                  </p>
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-blue-100">
-                    <span className={`flex items-center gap-1.5 text-xs font-bold ${b.open ? 'text-success' : 'text-navy-500'}`}>
-                      <span className={`w-2 h-2 rounded-full ${b.open ? 'bg-success animate-pulse' : 'bg-blue-300'}`} />
-                      {b.open ? 'Buka sekarang' : 'Sedang tutup'}
-                    </span>
-                    <span className="flex items-center gap-1 text-xs font-bold text-navy-700 group-hover:text-yellow-600 group-hover:gap-2 transition-all">
-                      Lihat detail <ArrowRight size={13} />
-                    </span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-
-            {/* tile CTA ke peta penuh */}
-            <motion.div {...reveal} transition={{ ...reveal.transition, delay: FEATURED.length * 0.06 }} whileHover={{ y: -8 }}>
-              <Link
-                to="/explore"
-                className="relative h-full min-h-72 flex flex-col items-center justify-center gap-4 bg-navy-800 rounded-3xl overflow-hidden text-center p-6 shadow-sm hover:shadow-2xl hover:shadow-navy-800/30 transition-shadow duration-300"
-              >
-                <div className="blob-morph absolute -top-12 -right-12 w-44 h-44 bg-yellow-500/15 pointer-events-none" aria-hidden="true" />
-                <div className="blob-morph-slow absolute -bottom-14 -left-10 w-40 h-40 bg-blue-400/15 pointer-events-none" aria-hidden="true" />
-                <span className="relative w-14 h-14 rounded-full bg-yellow-500 text-navy-800 flex items-center justify-center shadow-lg shadow-yellow-500/30">
-                  <MapPin size={24} />
-                </span>
-                <div className="relative">
-                  <p className="font-heading font-extrabold text-xl text-blue-50">172+ usaha lainnya</p>
-                  <p className="text-sm text-blue-300 mt-1">menunggumu di peta</p>
-                </div>
-                <span className="relative flex items-center gap-2 bg-yellow-500 text-navy-800 text-sm font-heading font-bold px-6 py-3 rounded-full">
-                  Buka Peta Penuh <ArrowRight size={15} />
-                </span>
-              </Link>
-            </motion.div>
-          </div>
-        </div>
-      </section>
+      {/* ═══ 02 Lagi rame — filter kategori interaktif ═══ */}
+      <TrendingSection onSelect={setSelected} />
 
       {/* ═══ Spotlight navy: UMKM minggu ini ═══ */}
       <section className="relative overflow-hidden bg-navy-800 text-blue-50">
@@ -720,91 +626,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ═══ Untuk pemilik usaha: roadmap jalan berkelok ═══ */}
-      <section id="daftar" className="max-w-6xl mx-auto px-5 py-16 overflow-hidden">
-        <motion.div {...reveal} className="text-center max-w-xl mx-auto">
-          <div className="flex justify-center"><SectionTag n="04" label="Untuk Pemilik Usaha" /></div>
-          <h2 className="font-heading font-extrabold text-2xl lg:text-3xl mt-3">
-            Perjalanan usahamu <span className="italic text-yellow-600">menuju peta</span>
-          </h2>
-          <p className="text-navy-500 text-sm mt-2">Empat pemberhentian singkat — 10 menit dari HP, tanpa dokumen ribet.</p>
-        </motion.div>
-
-        {/* desktop: jalan berkelok dengan pin milestone */}
-        <div className="relative hidden lg:block mt-8 aspect-[1200/430]">
-          <svg viewBox="0 0 1200 430" className="absolute inset-0 w-full h-full" aria-hidden="true">
-            {/* bayangan tepi jalan */}
-            <path d="M -60 335 C 170 335 230 160 420 168 C 560 174 600 305 740 297 C 870 290 910 118 1090 116 L 1260 112" stroke="#DCEBF5" strokeWidth="58" fill="none" strokeLinecap="round" transform="translate(0 7)" />
-            {/* badan jalan navy */}
-            <path d="M -60 335 C 170 335 230 160 420 168 C 560 174 600 305 740 297 C 870 290 910 118 1090 116 L 1260 112" stroke="#16294F" strokeWidth="46" fill="none" strokeLinecap="round" />
-            {/* marka putus-putus */}
-            <path d="M -60 335 C 170 335 230 160 420 168 C 560 174 600 305 740 297 C 870 290 910 118 1090 116 L 1260 112" stroke="#fff" strokeWidth="3.5" strokeDasharray="18 15" fill="none" />
-          </svg>
-          {[
-            { n: '01', t: 'Buat akun', d: 'Registrasi 2 menit — cukup nama & nomor HP aktif.', icon: UserPlus, color: 'bg-yellow-500 text-navy-800', stem: 'bg-yellow-500', x: '10%', y: '78%', stand: true },
-            { n: '02', t: 'Isi formulir usaha', d: 'Nama, kategori, foto, lalu tandai pin lokasimu.', icon: Store, color: 'bg-navy-800 text-yellow-500', stem: 'bg-navy-800', x: '35.8%', y: '39%', stand: false },
-            { n: '03', t: 'Verifikasi admin', d: 'Ditinjau ≤ 24 jam supaya data di peta terpercaya.', icon: ShieldCheck, color: 'bg-info text-white', stem: 'bg-info', x: '61.7%', y: '69%', stand: true },
-            { n: '04', t: 'Tayang di peta!', d: 'Ditemukan tetangga radius 2 km + bebas pasang promo.', icon: Rocket, color: 'bg-success text-white', stem: 'bg-success', x: '90.8%', y: '27%', stand: false },
-          ].map((m, i) => (
-            <motion.div
-              key={m.n}
-              {...reveal}
-              transition={{ ...reveal.transition, delay: i * 0.12 }}
-              className={`absolute -translate-x-1/2 ${m.stand ? '-translate-y-full' : ''}`}
-              style={{ left: m.x, top: m.y }}
-            >
-              <div className={`flex items-center ${m.stand ? 'flex-col' : 'flex-col-reverse'}`}>
-                <div className={`w-48 text-center ${m.stand ? 'mb-3' : 'mt-3'}`}>
-                  <span className="inline-block bg-yellow-500 text-navy-800 font-heading font-extrabold text-[11px] px-2 py-0.5 rounded-md shadow-sm">{m.n}</span>
-                  <p className="font-heading font-extrabold text-base mt-1.5">{m.t}</p>
-                  <p className="text-xs text-navy-500 leading-relaxed mt-1">{m.d}</p>
-                </div>
-                <motion.div
-                  whileHover={{ scale: 1.12, rotate: 6 }}
-                  className={`w-16 h-16 rounded-full ${m.color} ring-4 ring-white shadow-xl shadow-navy-800/25 flex items-center justify-center`}
-                >
-                  <m.icon size={24} />
-                </motion.div>
-                <div className={`w-1.5 h-9 ${m.stem} ${m.stand ? 'rounded-b-full' : 'rounded-t-full'}`} />
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* mobile: langkah vertikal */}
-        <div className="lg:hidden mt-8 space-y-0">
-          {[
-            { n: '01', t: 'Buat akun', d: 'Registrasi 2 menit — cukup nama & nomor HP aktif.', icon: UserPlus, color: 'bg-yellow-500 text-navy-800' },
-            { n: '02', t: 'Isi formulir usaha', d: 'Nama, kategori, foto, lalu tandai pin lokasimu.', icon: Store, color: 'bg-navy-800 text-yellow-500' },
-            { n: '03', t: 'Verifikasi admin', d: 'Ditinjau ≤ 24 jam supaya data di peta terpercaya.', icon: ShieldCheck, color: 'bg-info text-white' },
-            { n: '04', t: 'Tayang di peta!', d: 'Ditemukan tetangga radius 2 km + bebas pasang promo.', icon: Rocket, color: 'bg-success text-white' },
-          ].map((m, i, arr) => (
-            <motion.div key={m.n} {...reveal} transition={{ ...reveal.transition, delay: i * 0.08 }} className="flex gap-4">
-              <div className="flex flex-col items-center">
-                <span className={`w-12 h-12 shrink-0 rounded-full ${m.color} ring-4 ring-white shadow-lg flex items-center justify-center`}>
-                  <m.icon size={19} />
-                </span>
-                {i < arr.length - 1 && <span className="flex-1 w-1 bg-navy-800/15 rounded-full my-1" style={{ minHeight: 28 }} />}
-              </div>
-              <div className="pb-7">
-                <p className="font-heading font-extrabold text-sm">{m.n} · {m.t}</p>
-                <p className="text-sm text-navy-500 mt-1 leading-relaxed">{m.d}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        <motion.div {...reveal} className="text-center mt-6">
-          <MotionLink
-            to="/register"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.96 }}
-            className="inline-flex items-center gap-2 bg-navy-800 hover:bg-navy-700 text-blue-50 font-heading font-bold px-7 py-3.5 rounded-full shadow-lg shadow-navy-800/20 transition-colors"
-          >
-            <Store size={18} /> Mulai Perjalananmu <ArrowRight size={16} />
-          </MotionLink>
-        </motion.div>
-      </section>
+      {/* ═══ 04 Perjalanan usaha — milestone interaktif + kisah pencapaian ═══ */}
+      <JourneySection />
 
       {/* ═══ CTA ═══ */}
       <section className="bg-blue-50 border-t border-blue-200">
@@ -983,7 +806,7 @@ export default function Landing() {
                 <p className="text-sm text-navy-500 leading-relaxed mt-4">{selected.desc}</p>
                 <div className="flex gap-2 mt-5">
                   <MotionLink
-                    to="/explore"
+                    to={`/explore?usaha=${encodeURIComponent(selected.id)}`}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}
                     className="flex-1 flex items-center justify-center gap-1.5 bg-navy-800 hover:bg-navy-700 text-blue-50 text-sm font-bold py-3 rounded-xl transition-colors"
@@ -991,7 +814,7 @@ export default function Landing() {
                     <MapPin size={15} /> Lihat di Peta
                   </MotionLink>
                   <motion.a
-                    href="https://wa.me/6281234567890"
+                    href={`https://wa.me/${String(selected.phone ?? '').replace(/\D/g, '')}`}
                     target="_blank"
                     rel="noreferrer"
                     whileHover={{ scale: 1.02 }}

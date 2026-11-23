@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { query } from '../db.js';
 import { requireAuth } from '../middlewares/auth.middleware.js';
 import { parseBusiness, WRITABLE, toParams, PUBLIC_COLUMNS } from '../validators/business.js';
+import { parseQuery, searchBusinesses, describe } from '../../../shared/smartSearch.mjs';
 
 const router = Router();
 
@@ -27,6 +28,43 @@ router.get('/', async (req, res) => {
       [lat, lng]
     );
     res.json(rows.filter((r) => r.distance_km <= Number(radius)));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Smart Search: GET /api/businesses/search?q=warung terdekat&lat=-6.2&lng=106.8
+router.get('/search', async (req, res) => {
+  const lat = Number(req.query.lat);
+  const lng = Number(req.query.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+    return res.status(400).json({ message: 'Lokasi (lat, lng) tidak valid' });
+  }
+  const parsed = parseQuery(String(req.query.q ?? '').slice(0, 100));
+  const radius = Math.min(25, Math.max(1, Number(req.query.radius) || 10));
+  try {
+    const { rows } = await query(
+      `SELECT * FROM (
+         SELECT ${PUBLIC_COLUMNS},
+           (SELECT ROUND(AVG(r.rating)::numeric, 1) FROM reviews r WHERE r.business_id = b.id) AS rating,
+           (SELECT COUNT(*) FROM reviews r WHERE r.business_id = b.id)::int AS reviews,
+           (6371 * acos(LEAST(1,
+             cos(radians($1)) * cos(radians(latitude)) * cos(radians(longitude) - radians($2)) +
+             sin(radians($1)) * sin(radians(latitude))
+           ))) AS distance_km
+         FROM businesses b
+         WHERE status = 'approved'
+       ) t
+       WHERE distance_km <= $3
+       ORDER BY distance_km
+       LIMIT 500`,
+      [lat, lng, radius]
+    );
+    const { results, sortedBy, areaMatchedByAddress } = searchBusinesses(rows, parsed, [lat, lng], { limit: 100 });
+    res.json({
+      parsed: { ...parsed, chips: describe(parsed), sortedBy, areaMatchedByAddress },
+      results: results.map((r) => ({ ...r.biz, distance_km: r.dist, why: r.why })),
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

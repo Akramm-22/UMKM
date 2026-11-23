@@ -7,6 +7,8 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 5173,
+    // izinkan import dari ../shared (mesin pencarian pintar dipakai bersama dengan server)
+    fs: { allow: ['..'] },
     // request /api diteruskan ke Express agar bebas masalah CORS saat dev
     proxy: {
       '/api': 'http://localhost:5000',
