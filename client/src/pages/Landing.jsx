@@ -13,6 +13,7 @@ import SectionTag from '../components/landing/SectionTag.jsx';
 import TrendingSection from '../components/landing/TrendingSection.jsx';
 import JourneySection from '../components/landing/JourneySection.jsx';
 import PhotoStory from '../components/landing/PhotoStory.jsx';
+import TrustSection from '../components/landing/TrustSection.jsx';
 import { SUGGESTIONS } from '../../../shared/smartSearch.mjs';
 
 const MotionLink = motion.create(Link);
@@ -549,83 +550,8 @@ export default function Landing() {
       {/* ═══ 02 Lagi rame — filter kategori interaktif ═══ */}
       <TrendingSection onSelect={setSelected} />
 
-      {/* ═══ Spotlight navy: UMKM minggu ini ═══ */}
-      <section className="relative overflow-hidden bg-navy-800 text-blue-50">
-        {/* gelembung dekoratif di bidang navy */}
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-          <span className="animate-float absolute top-12 right-[8%] w-5 h-5 rounded-full bg-yellow-500/20" />
-          <span className="animate-float-delay absolute bottom-16 left-[5%] w-8 h-8 rounded-full border-2 border-blue-400/25" />
-          <span className="animate-float-slow absolute top-1/3 left-[45%] w-3 h-3 rounded-full bg-blue-300/30" />
-          <span className="animate-float absolute bottom-10 right-[28%] w-4 h-4 rounded-full border-2 border-yellow-500/25" />
-        </div>
-        <div className="relative max-w-6xl mx-auto px-5 py-16 grid lg:grid-cols-2 gap-10 items-center">
-          <motion.div {...reveal} className="relative">
-            {/* liquid shape di bidang navy */}
-            <div className="blob-morph absolute -top-8 -right-8 w-52 h-52 bg-yellow-500/10" aria-hidden="true" />
-            <img
-              src={PHOTOS.sate}
-              alt="Sate Ayam Bang Jali"
-              className="relative w-full h-80 object-cover rounded-3xl"
-            />
-            <div className="absolute -bottom-5 -right-2 sm:right-6 bg-white text-navy-800 rounded-2xl shadow-2xl p-4 w-56">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-yellow-600">UMKM Minggu Ini</p>
-              <p className="font-heading font-extrabold text-base mt-1">Sate Ayam Bang Jali</p>
-              <p className="text-xs text-navy-500 flex items-center gap-1 mt-1">
-                <Star size={11} className="text-yellow-500 fill-yellow-500" /> 4.9 (210) · 550 m
-              </p>
-              <Link to="/explore" className="mt-3 flex items-center justify-center gap-1.5 bg-yellow-500 hover:bg-yellow-400 text-navy-800 text-xs font-heading font-bold py-2.5 rounded-xl transition-colors">
-                Lihat di Peta <ArrowRight size={13} />
-              </Link>
-            </div>
-          </motion.div>
-          <motion.div {...reveal} transition={{ ...reveal.transition, delay: 0.08 }}>
-            <SectionTag n="03" label="Paling Dicari" light />
-            <h2 className="font-heading font-extrabold text-2xl lg:text-3xl mt-3">
-              <span className="italic text-yellow-500">Jagoan lokal</span> pilihan tetangga
-            </h2>
-            {/* baris statistik (ref: Olivia "600+ / 50+ / 18+") */}
-            <div className="flex gap-10 mt-6">
-              {[
-                { n: '177+', l: 'Usaha tayang' },
-                { n: '23', l: 'Promo aktif' },
-                { n: '4.8', l: 'Rating rata-rata' },
-              ].map((s) => (
-                <div key={s.l}>
-                  <p className="font-heading font-extrabold text-2xl lg:text-3xl text-yellow-500">{s.n}</p>
-                  <p className="text-xs text-blue-300 mt-1">{s.l}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 space-y-2">
-              {[
-                { rank: 1, name: 'Sate Ayam Bang Jali', cat: 'Kuliner', metric: '412 kunjungan', hot: true },
-                { rank: 2, name: 'Warung Nasi Bu Siti', cat: 'Kuliner', metric: '351 kunjungan' },
-                { rank: 3, name: 'Laundry Kilat 24', cat: 'Jasa', metric: '289 kunjungan' },
-                { rank: 4, name: 'Sembako Berkah', cat: 'Toko', metric: '244 kunjungan' },
-              ].map((r) => (
-                <MotionLink
-                  key={r.rank}
-                  to="/explore"
-                  whileHover={{ x: 6 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`flex items-center gap-4 rounded-xl px-4 py-3.5 transition-colors ${
-                    r.hot
-                      ? 'bg-yellow-500 text-navy-800 hover:bg-yellow-400'
-                      : 'bg-navy-700 hover:bg-navy-600 text-blue-50'
-                  }`}
-                >
-                  <span className={`font-heading font-extrabold text-lg w-6 ${r.hot ? 'text-navy-800' : 'text-yellow-500'}`}>{r.rank}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-heading font-bold text-sm truncate">{r.name}</p>
-                    <p className={`text-xs ${r.hot ? 'text-navy-700' : 'text-blue-300'}`}>{r.cat} · {r.metric}</p>
-                  </div>
-                  <ChevronRight size={16} className={r.hot ? 'text-navy-800' : 'text-blue-300'} />
-                </MotionLink>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      {/* ═══ 03 Kenapa bisa dipercaya — bento grid verifikasi & keamanan ═══ */}
+      <TrustSection />
 
       {/* ═══ 04 Perjalanan usaha — milestone interaktif + kisah pencapaian ═══ */}
       <JourneySection />
