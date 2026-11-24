@@ -6,7 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Eye, Search, PhoneCall, Megaphone, X, CheckCircle2, Hourglass, BadgeCheck, Ban, PencilLine, Plus, Home, RadioTower, Store,
-  MessageSquare, LifeBuoy, MapPin, ArrowRight, Star, Trash2, Phone, Globe, AtSign, Wallet, ChevronRight, Sparkles,
+  MessageSquare, MapPin, ArrowRight, Star, Trash2, Phone, Globe, AtSign, Wallet, ChevronRight, Sparkles,
   Loader2, AlertTriangle, Lightbulb, FileClock, MoreHorizontal, ExternalLink, Info, ChevronDown,
 } from 'lucide-react';
 import ProfileMenu from '../components/ProfileMenu.jsx';
@@ -30,7 +30,6 @@ const VIEWS = [
   { key: 'update', label: 'Update', icon: RadioTower },
   { key: 'usaha', label: 'Manajemen Usaha', icon: Store },
   { key: 'ulasan', label: 'Ulasan', icon: MessageSquare },
-  { key: 'panduan', label: 'Panduan', icon: LifeBuoy },
 ];
 
 const rise = (delay = 0) => ({
@@ -580,7 +579,6 @@ export default function BusinessDashboard() {
                   update: 'Pantau jangkauan, pasang promo, dan atur status buka usaha yang sudah tayang.',
                   usaha: 'Tambah, lihat detail, edit, dan kelola setiap usaha milikmu.',
                   ulasan: 'Apa kata konsumen tentang usahamu.',
-                  panduan: 'Langkah & tips agar usahamu cepat tayang dan ramai dikunjungi.',
                 }[view]}
               </p>
             </div>
@@ -908,50 +906,6 @@ export default function BusinessDashboard() {
                           </ul>
                         );
                       })()}
-                    </section>
-                  </div>
-                )}
-
-                {/* ═══ PANDUAN ═══ */}
-                {view === 'panduan' && (
-                  <div className="mt-6 pb-8 grid lg:grid-cols-12 gap-4 items-start">
-                    <section className="lg:col-span-7 bg-white border border-blue-200 rounded-2xl p-5">
-                      <p className="font-heading font-bold text-sm">Alur usaha sampai tayang</p>
-                      <ol className="mt-4 relative border-l-2 border-dashed border-blue-200 ml-3 space-y-5">
-                        {[
-                          { icon: Plus, t: 'Tambah usaha', d: 'Isi profil seperti Google Maps: kategori, alamat & titik peta, kontak, jam buka, foto, menu.' },
-                          { icon: Hourglass, t: 'Verifikasi admin ≤ 24 jam', d: 'Admin mengecek kebenaran data & foto. Statusnya terlihat di Manajemen Usaha.' },
-                          { icon: PencilLine, t: 'Perbaiki bila diminta', d: 'Jika perlu perbaikan, baca catatan admin lalu ajukan ulang dari tombol Perbaiki.' },
-                          { icon: BadgeCheck, t: 'Tayang di peta', d: 'Konsumen di sekitar bisa menemukan usahamu, melihat rute, dan menghubungimu.' },
-                          { icon: RadioTower, t: 'Update rutin', d: 'Pasang promo dan atur status buka/tutup dari menu Update — langsung tampil tanpa verifikasi ulang.' },
-                        ].map((s, i) => (
-                          <motion.li key={s.t} {...rise(0.05 * i)} className="pl-6 relative">
-                            <span className="absolute -left-[17px] top-0 w-8 h-8 rounded-full bg-navy-800 text-yellow-400 flex items-center justify-center ring-4 ring-white"><s.icon size={14} /></span>
-                            <p className="text-sm font-bold">{s.t}</p>
-                            <p className="text-xs text-navy-500 mt-0.5 leading-relaxed">{s.d}</p>
-                          </motion.li>
-                        ))}
-                      </ol>
-                    </section>
-                    <section className="lg:col-span-5 space-y-3">
-                      {[
-                        { q: 'Bisakah saya punya lebih dari satu usaha?', a: 'Bisa. Tambahkan sebanyak yang kamu kelola — setiap usaha punya data, status, promo, dan ulasan masing-masing.' },
-                        { q: 'Apakah mengedit data usaha yang sudah tayang perlu verifikasi?', a: 'Ya, perubahan data utama (alamat, kontak, foto, menu) ditinjau ulang admin. Promo & status buka/tutup tidak perlu.' },
-                        { q: 'Mengapa usaha saya perlu perbaikan?', a: 'Lihat catatan admin di detail usaha. Biasanya karena foto kurang jelas, alamat tidak lengkap, atau titik peta tidak sesuai.' },
-                        { q: 'Apakah ada biaya?', a: 'Tidak. PesanLokal gratis untuk UMKM dan tanpa komisi.' },
-                      ].map((f) => (
-                        <details key={f.q} className="group bg-white border border-blue-200 rounded-2xl px-5 py-3.5 open:shadow-md transition-shadow">
-                          <summary className="flex items-center justify-between gap-3 cursor-pointer list-none text-sm font-bold">
-                            {f.q}<ChevronDown size={16} className="shrink-0 text-navy-500 transition-transform group-open:rotate-180" />
-                          </summary>
-                          <p className="text-xs text-navy-500 mt-2 leading-relaxed">{f.a}</p>
-                        </details>
-                      ))}
-                      <div className="bg-navy-800 text-blue-100 rounded-2xl p-5">
-                        <p className="font-heading font-bold text-sm text-white flex items-center gap-2"><LifeBuoy size={15} className="text-yellow-400" /> Butuh bantuan?</p>
-                        <p className="text-xs mt-1.5">Hubungi admin wilayah lewat WhatsApp untuk pertanyaan verifikasi.</p>
-                        <a href="https://wa.me/6281200000000" target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1.5 bg-yellow-500 hover:bg-yellow-400 text-navy-900 text-xs font-bold px-4 py-2.5 rounded-xl transition-colors"><Phone size={13} /> Chat admin</a>
-                      </div>
                     </section>
                   </div>
                 )}
