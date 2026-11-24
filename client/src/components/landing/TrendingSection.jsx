@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { scrollReveal } from '../../lib/scrollReveal.js';
 import {
   LayoutGrid, UtensilsCrossed, ChefHat, CupSoda, Cookie, Store, Wrench, Tag, Clock,
   Heart, Star, MapPin, ArrowRight, Flame, TrendingUp, Navigation, RotateCcw, SearchX,
@@ -116,9 +117,7 @@ export default function TrendingSection({ onSelect }) {
       <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(255,201,20,.14) 0%, rgba(255,201,20,0) 65%)' }} aria-hidden="true" />
       <div className="relative max-w-6xl mx-auto px-5">
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
+          {...scrollReveal(0.3)}
           className="flex flex-col lg:flex-row lg:items-end justify-between gap-5"
         >
           <div>

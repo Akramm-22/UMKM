@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { motion, useInView } from 'motion/react';
+import { scrollReveal } from '../../lib/scrollReveal.js';
 import {
   ShieldCheck, BadgeCheck, Flag, Star, Clock, Lock, MapPin, Camera, Phone, Check, EyeOff, HandCoins, UserCheck,
 } from 'lucide-react';
@@ -14,10 +15,7 @@ function Tile({ className = '', children, delay = 0 }) {
   };
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.25 }}
-      transition={{ duration: 0.45, delay, ease: 'easeOut' }}
+      {...scrollReveal(0.25, delay)}
       onMouseMove={onMove}
       className={`group relative overflow-hidden rounded-3xl bg-navy-900/70 ring-1 ring-white/10 hover:ring-yellow-500/40 p-6 transition-[box-shadow] duration-300 ${className}`}
     >
@@ -95,7 +93,7 @@ export default function TrustSection() {
     <section id="terpercaya" className="relative overflow-hidden bg-navy-800 text-blue-50">
       <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[48rem] h-[24rem] rounded-full bg-[radial-gradient(closest-side,rgba(74,144,217,.18),transparent)] pointer-events-none" aria-hidden="true" />
       <div className="relative max-w-6xl mx-auto px-5 py-16">
-        <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} className="max-w-2xl">
+        <motion.div {...scrollReveal(0.3)} className="max-w-2xl">
           <SectionTag n="03" label="Kenapa Bisa Dipercaya" light />
           <h2 className="font-heading font-extrabold text-2xl lg:text-3xl mt-3">
             Setiap pin di peta <span className="italic text-yellow-500">sudah dicek manusia.</span>

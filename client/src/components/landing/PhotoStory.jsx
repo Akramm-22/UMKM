@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useMotionValueEvent, useTransform, useReducedMotion } from 'motion/react';
-import { Clock, Wallet, MessageCircle, MapPin, ArrowRight, ChevronUp, ChevronDown, Flame, Navigation, Coffee, Wifi, Truck, PackageCheck } from 'lucide-react';
+import { Clock, Wallet, MessageCircle, MapPin, Flame, Navigation, Coffee, Wifi, Truck, PackageCheck } from 'lucide-react';
 
 const IMG = (id, w = 1600) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=75`;
 
@@ -48,7 +47,7 @@ const SLIDES = [
 // judul muncul per kata dari balik garis
 function RevealTitle({ text, dir }) {
   return (
-    <h2 className="font-heading font-extrabold text-[clamp(1.75rem,4.2vw,2.9rem)] text-white leading-[1.12] mt-4 text-balance">
+    <h2 className="font-heading font-extrabold text-[clamp(1.85rem,3.4vw,3.1rem)] text-white leading-[1.1] tracking-tight mt-5 text-balance">
       {text.split(' ').map((w, i) => (
         <span key={`${w}-${i}`} className="inline-block overflow-hidden align-bottom pb-[0.08em] mr-[0.25em]">
           <motion.span
@@ -79,14 +78,6 @@ export default function PhotoStory() {
   const ring = useTransform(local, [0, 1], [0, 1]);
   const drift = useTransform(local, [0, 1], reduce ? ['0%', '0%'] : ['-3%', '3%']);
   const textDrift = useTransform(local, [0, 1], reduce ? [0, 0] : [14, -14]);
-  const [wide, setWide] = useState(() => window.matchMedia('(min-width: 768px)').matches);
-
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 768px)');
-    const on = () => setWide(mq.matches);
-    mq.addEventListener('change', on);
-    return () => mq.removeEventListener('change', on);
-  }, []);
 
   // muat semua foto lebih awal agar pergantian tidak berkedip
   useEffect(() => {
@@ -114,32 +105,31 @@ export default function PhotoStory() {
   };
 
   const s = SLIDES[index];
-  const arc = wide
-    ? { open: 'ellipse(100% 118% at 0% 50%)', closed: 'ellipse(0% 0% at 0% 50%)' }
-    : { open: 'ellipse(140% 100% at 50% 0%)', closed: 'ellipse(0% 0% at 50% 0%)' };
   const NoteIcon = s.note.icon;
 
   return (
     <section ref={ref} className="relative bg-navy-900" style={{ height: `${SLIDES.length * 100}vh` }} aria-label="Cerita usaha lokal">
       <div className="sticky top-0 h-[100svh] overflow-hidden">
-        {/* latar: versi mini foto aktif yang diperbesar → buram alami tanpa filter blur yang berat */}
+        {/* latar navy: gradasi + cahaya lembut; foto aktif hanya memberi rona warna tipis */}
+        <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_20%_45%,#1D3563_0%,#0F1E3D_45%,#0A1428_100%)]" aria-hidden="true" />
         <AnimatePresence initial={false}>
           <motion.img
             key={`bg-${index}`}
             src={s.img.replace('w=1600', 'w=200&blur=80')}
             alt=""
             aria-hidden="true"
-            initial={{ opacity: 0, scale: 1.12 }}
-            animate={{ opacity: 1, scale: 1.05 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.18 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.9, ease: 'easeOut' }}
-            className="absolute inset-0 w-full h-full object-cover will-change-transform"
+            className="absolute inset-0 w-full h-full object-cover mix-blend-luminosity"
           />
         </AnimatePresence>
-        <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-l from-navy-900/95 via-navy-900/70 to-navy-900/35" aria-hidden="true" />
+        <div className="absolute -top-1/3 left-[8%] w-[60vmax] h-[60vmax] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(74,144,217,.22) 0%, rgba(74,144,217,0) 60%)' }} aria-hidden="true" />
+        <div className="absolute -bottom-1/3 -right-[10%] w-[55vmax] h-[55vmax] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(255,201,20,.10) 0%, rgba(255,201,20,0) 60%)' }} aria-hidden="true" />
         <div
-          className="absolute inset-0 bg-dots opacity-[0.07] pointer-events-none"
-          style={{ maskImage: 'linear-gradient(to left, #000, transparent 70%)', WebkitMaskImage: 'linear-gradient(to left, #000, transparent 70%)' }}
+          className="absolute inset-0 bg-dots opacity-[0.06] pointer-events-none"
+          style={{ maskImage: 'radial-gradient(ellipse at 70% 50%, #000, transparent 70%)', WebkitMaskImage: 'radial-gradient(ellipse at 70% 50%, #000, transparent 70%)' }}
           aria-hidden="true"
         />
 
@@ -153,60 +143,109 @@ export default function PhotoStory() {
           ))}
         </div>
 
-        {/* foto utama: bidang lengkung yang terbuka dari kiri */}
-        <div className="absolute inset-x-0 top-0 h-[42%] md:inset-y-0 md:right-auto md:h-full md:w-[56%]">
-          <AnimatePresence initial={false} custom={dir}>
-            <motion.div
-              key={`img-${index}`}
-              custom={dir}
-              className="absolute inset-0 overflow-hidden"
-              initial={{ clipPath: arc.closed }}
-              animate={{ clipPath: arc.open }}
-              exit={{ opacity: 0, transition: { duration: 0.5, delay: 0.35 } }}
-              transition={{ duration: 0.95, ease: [0.65, 0, 0.35, 1] }}
-              style={{ zIndex: 2 }}
-            >
-              <motion.div className="absolute -inset-y-[4%] inset-x-0" style={{ y: drift }}>
-                <motion.img
-                  src={s.img}
-                  alt={s.title}
-                  initial={{ scale: reduce ? 1 : 1.25 }}
-                  animate={{ scale: 1 }}
-                  transition={{ duration: 1.4, ease: 'easeOut' }}
-                  className="w-full h-full object-cover"
+        {/* komposisi dua kolom: foto bulat + deskripsi */}
+        <div className="relative z-10 h-full max-w-7xl mx-auto px-5 sm:px-8 md:pr-24 lg:pr-28 flex flex-col items-center md:grid md:grid-cols-[1.25fr_1fr] md:items-center gap-8 md:gap-12 lg:gap-16 pt-[6.5rem] md:pt-0">
+          <div className="relative w-full flex justify-center">
+            <div className="relative w-[min(86vw,42svh,26rem)] sm:w-[min(70vw,48svh,32rem)] md:w-full md:max-w-[min(80vh,46rem)] aspect-square">
+              {/* glow lembut di sekeliling foto (gradien, foto tetap tajam) */}
+              <motion.span
+                key={`glow-${index}`}
+                className="absolute -inset-[22%] rounded-full pointer-events-none"
+                style={{ background: 'radial-gradient(circle, rgba(74,144,217,.30) 0%, rgba(74,144,217,.12) 40%, rgba(10,20,40,0) 68%)' }}
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 1, ease: 'easeOut' }}
+                aria-hidden="true"
+              />
+              {/* cincin putus-putus yang berputar pelan + titik orbit */}
+              <motion.svg
+                viewBox="0 0 100 100"
+                className="absolute -inset-[9%] w-[118%] h-[118%] pointer-events-none"
+                animate={reduce ? undefined : { rotate: 360 }}
+                transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
+                aria-hidden="true"
+              >
+                <circle cx="50" cy="50" r="49" fill="none" stroke="rgba(255,255,255,.18)" strokeWidth=".35" strokeDasharray="1.2 2.4" />
+                <circle cx="50" cy="1" r="1.3" fill="#FFC914" />
+              </motion.svg>
+
+              {/* riak cahaya yang memancar setiap foto berganti */}
+              {!reduce && [0, 1].map((r) => (
+                <motion.span
+                  key={`ripple-${index}-${r}`}
+                  className={`absolute inset-0 rounded-full pointer-events-none border ${r ? 'border-blue-300/50' : 'border-white/60'}`}
+                  initial={{ scale: 1, opacity: 0 }}
+                  animate={{ scale: [1, 1.32], opacity: [0.8, 0] }}
+                  transition={{ duration: 1.1, delay: 0.35 + r * 0.18, ease: 'easeOut' }}
+                  aria-hidden="true"
                 />
-              </motion.div>
-              <div className="absolute inset-0 bg-gradient-to-t from-navy-900/50 via-transparent to-transparent md:bg-gradient-to-r md:from-transparent md:to-navy-900/25" aria-hidden="true" />
-            </motion.div>
-          </AnimatePresence>
+              ))}
 
-          {/* kartu kaca di atas foto */}
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={`note-${index}`}
-              initial={{ opacity: 0, y: 18, scale: 0.94 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.96 }}
-              transition={{ duration: 0.45, delay: 0.55, ease: 'easeOut' }}
-              className="hidden sm:flex absolute z-[4] left-5 md:left-10 bottom-5 md:bottom-12 items-center gap-3 rounded-2xl bg-navy-900/70 ring-1 ring-white/20 pl-2.5 pr-4 py-2.5 text-white shadow-xl shadow-navy-900/30"
-            >
-              <span className="w-9 h-9 rounded-xl bg-yellow-500 text-navy-900 flex items-center justify-center"><NoteIcon size={17} strokeWidth={2.4} /></span>
-              <span className="leading-tight">
-                <span className="block text-xs font-bold">{s.note.t}</span>
-                <span className="block text-[11px] text-blue-100/80">{s.note.s}</span>
-              </span>
-            </motion.div>
-          </AnimatePresence>
+              <div className="absolute inset-0 rounded-full overflow-hidden ring-4 ring-navy-900/80 shadow-[0_30px_80px_-20px_rgba(0,0,0,.7)] bg-navy-800">
+                <AnimatePresence initial={false} custom={dir}>
+                  <motion.div
+                    key={`img-${index}`}
+                    custom={dir}
+                    className="absolute inset-0"
+                    variants={{
+                      // foto baru terbuka seperti portal dari sisi arah gulir
+                      enter: (d) => ({ clipPath: `circle(0% at 50% ${d > 0 ? 100 : 0}%)`, zIndex: 2 }),
+                      center: { clipPath: `circle(150% at 50% ${dir > 0 ? 100 : 0}%)`, zIndex: 2, transition: { duration: 1, ease: [0.76, 0, 0.24, 1] } },
+                      // foto lama mengecil, berputar, dan memudar ke belakang
+                      exit: (d) => ({ scale: 0.82, rotate: d * 14, opacity: 0, zIndex: 1, transition: { duration: 0.8, ease: [0.65, 0, 0.35, 1] } }),
+                    }}
+                    initial={reduce ? false : 'enter'}
+                    animate="center"
+                    exit="exit"
+                  >
+                    <motion.div className="absolute -inset-[6%]" style={{ y: drift }}>
+                      <motion.img
+                        src={s.img}
+                        alt={s.title}
+                        initial={{ scale: reduce ? 1 : 1.4, rotate: reduce ? 0 : dir * -18 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
+                        className="w-full h-full object-cover object-center"
+                      />
+                    </motion.div>
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,transparent_55%,rgba(10,20,40,.45)_100%)]" aria-hidden="true" />
+                    {/* kilau cahaya menyapu sekali setelah foto terbuka */}
+                    {!reduce && (
+                      <motion.span
+                        className="absolute inset-0 pointer-events-none"
+                        style={{ background: 'linear-gradient(115deg, transparent 38%, rgba(255,255,255,.32) 50%, transparent 62%)' }}
+                        initial={{ x: '-120%' }}
+                        animate={{ x: '120%' }}
+                        transition={{ duration: 1, delay: 0.65, ease: [0.4, 0, 0.2, 1] }}
+                        aria-hidden="true"
+                      />
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
 
-          {/* garis lengkung kuning mengikuti tepi foto */}
-          <svg className="hidden md:block absolute inset-0 w-full h-full pointer-events-none z-[3]" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M0 -18 A100 118 0 0 1 0 118" fill="none" stroke="#FFC914" strokeOpacity=".55" strokeWidth=".35" vectorEffect="non-scaling-stroke" />
-          </svg>
-        </div>
+              {/* keterangan singkat menempel di tepi bawah foto */}
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={`note-${index}`}
+                  initial={{ opacity: 0, y: 14, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.4, delay: 0.5, ease: 'easeOut' }}
+                  className="absolute z-[3] left-1/2 -translate-x-1/2 md:left-[2%] md:translate-x-0 bottom-[2%] md:bottom-[8%] flex items-center gap-2.5 rounded-2xl bg-white text-navy-800 pl-2 pr-3.5 py-2 shadow-xl shadow-black/30 whitespace-nowrap"
+                >
+                  <span className="w-8 h-8 shrink-0 rounded-xl bg-navy-800 text-yellow-400 flex items-center justify-center"><NoteIcon size={15} strokeWidth={2.4} /></span>
+                  <span className="leading-tight">
+                    <span className="block text-xs font-bold">{s.note.t}</span>
+                    <span className="block text-[10px] text-navy-500">{s.note.s}</span>
+                  </span>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
 
-        {/* deskripsi di sebelah kanan foto */}
-        <div className="relative z-10 h-full max-w-6xl mx-auto px-5 sm:px-8 flex items-start md:items-center pt-[calc(42svh+1rem)] md:pt-0">
-          <motion.div style={{ y: textDrift }} className="w-full md:w-[42%] md:ml-auto md:pr-20 lg:pr-16">
+          {/* deskripsi */}
+          <motion.div style={{ y: textDrift }} className="w-full max-w-md md:max-w-[28rem] text-center md:text-left">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={`txt-${index}`}
@@ -215,87 +254,39 @@ export default function PhotoStory() {
                 exit={{ opacity: 0, y: dir * -24, transition: { duration: 0.25 } }}
                 transition={{ duration: 0.3 }}
               >
-                <div className="flex items-end gap-3">
-                  <motion.p
-                    initial={{ opacity: 0, x: -16 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.5, ease: 'easeOut' }}
-                    className="hidden md:block font-heading font-extrabold text-7xl leading-none select-none text-transparent"
-                    style={{ WebkitTextStroke: '1.5px rgba(255,255,255,.28)' }}
-                    aria-hidden="true"
+                <div className="flex items-center justify-center md:justify-start gap-3">
+                  <motion.span
+                    initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 420, damping: 22, delay: 0.05 }}
+                    className="inline-flex items-center gap-1.5 bg-yellow-500 text-navy-800 text-xs font-heading font-extrabold px-3 py-1.5 rounded-full shadow-lg shadow-yellow-500/25"
                   >
-                    0{index + 1}
-                  </motion.p>
-                  <span className="hidden md:block mb-2 font-data text-xs font-bold text-white/40">/ 0{SLIDES.length}</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-navy-800" /> {s.tag}
+                  </motion.span>
+                  <motion.span
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    transition={{ duration: 0.6, delay: 0.15 }}
+                    className="hidden md:block h-px flex-1 max-w-[6rem] bg-gradient-to-r from-white/40 to-transparent origin-left"
+                    aria-hidden="true"
+                  />
                 </div>
-                <motion.span
-                  initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 420, damping: 22, delay: 0.05 }}
-                  className="inline-flex items-center gap-1.5 md:mt-3 bg-yellow-500 text-navy-800 text-xs font-heading font-extrabold px-3 py-1.5 rounded-full shadow-lg shadow-yellow-500/25"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-navy-800" /> {s.tag}
-                </motion.span>
                 <RevealTitle text={s.title} dir={dir} />
+                <motion.span
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: 0.5, delay: 0.25 }}
+                  className="block w-12 h-1 rounded-full bg-blue-300/40 mt-5 mx-auto md:mx-0 origin-left"
+                  aria-hidden="true"
+                />
                 <motion.p
                   initial={{ opacity: 0, y: 14 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.3, ease: 'easeOut' }}
-                  className="text-sm md:text-base text-blue-100/85 leading-relaxed mt-3 md:mt-4 max-w-md line-clamp-3 md:line-clamp-none"
+                  className="text-[15px] md:text-base text-blue-100/80 leading-7 mt-5 line-clamp-4 md:line-clamp-none"
                 >
                   {s.desc}
                 </motion.p>
-
-                <ul className="flex flex-wrap gap-2 mt-4 md:mt-5">
-                  {s.chips.map((c, i) => (
-                    <motion.li
-                      key={c.t}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.35, delay: 0.4 + i * 0.07 }}
-                      className="inline-flex items-center gap-1.5 text-[11px] md:text-xs font-semibold text-blue-50 bg-white/8 hover:bg-white/15 ring-1 ring-white/15 px-2.5 py-1.5 rounded-full transition-colors"
-                    >
-                      <c.icon size={13} className="text-yellow-400" /> {c.t}
-                    </motion.li>
-                  ))}
-                </ul>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.6 }}
-                  className="flex items-center gap-3 mt-5 md:mt-7"
-                >
-                  <Link
-                    to={`/explore?q=${encodeURIComponent(s.q)}`}
-                    className="group inline-flex items-center gap-2 bg-white text-navy-900 text-sm font-bold pl-4 pr-2 py-2 rounded-full shadow-lg shadow-navy-900/30 hover:bg-yellow-500 transition-colors"
-                  >
-                    Cari di peta
-                    <span className="w-7 h-7 rounded-full bg-navy-900 text-white flex items-center justify-center transition-transform group-hover:translate-x-0.5 group-hover:-rotate-45">
-                      <ArrowRight size={14} />
-                    </span>
-                  </Link>
-                  <div className="hidden md:flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => jump(index - 1)}
-                      disabled={index === 0}
-                      aria-label="Cerita sebelumnya"
-                      className="w-9 h-9 rounded-full ring-1 ring-white/25 text-white flex items-center justify-center hover:bg-white/10 hover:ring-white/50 disabled:opacity-30 disabled:pointer-events-none transition-all active:scale-90"
-                    >
-                      <ChevronUp size={16} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => jump(index + 1)}
-                      disabled={index === SLIDES.length - 1}
-                      aria-label="Cerita berikutnya"
-                      className="w-9 h-9 rounded-full ring-1 ring-white/25 text-white flex items-center justify-center hover:bg-white/10 hover:ring-white/50 disabled:opacity-30 disabled:pointer-events-none transition-all active:scale-90"
-                    >
-                      <ChevronDown size={16} />
-                    </button>
-                  </div>
-                </motion.div>
               </motion.div>
             </AnimatePresence>
           </motion.div>
@@ -344,7 +335,7 @@ export default function PhotoStory() {
         {/* petunjuk gulir */}
         <motion.div
           animate={{ opacity: index === SLIDES.length - 1 ? 0 : 0.8 }}
-          className="hidden md:flex absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex-col items-center gap-2 text-white pointer-events-none"
+          className="hidden lg:flex absolute bottom-5 left-1/2 -translate-x-1/2 z-10 flex-col items-center gap-1.5 text-white pointer-events-none"
           aria-hidden="true"
         >
           <span className="w-5 h-8 rounded-full border-2 border-white/60 flex justify-center pt-1.5">

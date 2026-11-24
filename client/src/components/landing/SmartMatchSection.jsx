@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, animate, useReducedMotion, useInView } from 'motion/react';
+import { scrollReveal } from '../../lib/scrollReveal.js';
 import {
   Sparkles, MapPin, Wallet, Clock, Star, Bike, BadgeCheck, Heart, AlertTriangle, LocateFixed,
   ArrowRight, ArrowLeft, RotateCcw, Search, Loader2, Database, FlaskConical, X, Navigation, Check, Radar as RadarIcon,
@@ -405,7 +406,7 @@ export default function SmartMatchSection() {
     <section ref={sectionRef} id="smart-match" className="relative py-16 scroll-mt-24 overflow-hidden">
       <div className="absolute inset-0 bg-[linear-gradient(180deg,#fff_0%,#F2F8FC_100%)] pointer-events-none" aria-hidden="true" />
       <div className="relative max-w-6xl mx-auto px-5">
-        <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+        <motion.div {...scrollReveal(0.3)} className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
           <div className="max-w-xl">
             <SectionTag n={<Sparkles size={15} />} label="Smart Matching" />
             <h2 className="font-heading font-extrabold text-2xl lg:text-3xl mt-3">

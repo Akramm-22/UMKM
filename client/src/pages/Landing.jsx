@@ -8,6 +8,7 @@ import {
   Leaf, Flame, Citrus, X, LayoutGrid, LogOut, Sparkles,
 } from 'lucide-react';
 import { useAuth, useBusinessStatus } from '../context/AuthContext.jsx';
+import { scrollReveal } from '../lib/scrollReveal.js';
 import { DEMO_BUSINESSES, toCard } from '../lib/demoPlaces.js';
 import SectionTag from '../components/landing/SectionTag.jsx';
 import TrendingSection from '../components/landing/TrendingSection.jsx';
@@ -45,12 +46,8 @@ const CATEGORIES = [
 // sumber data sama dengan peta; diurutkan dari yang paling ramai
 const FEATURED = DEMO_BUSINESSES.map((b) => toCard(b)).sort((a, b) => b.reviews * b.rating - a.reviews * a.rating);
 
-const reveal = {
-  initial: { opacity: 0, y: 16 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, amount: 0.2 },
-  transition: { duration: 0.45, ease: 'easeOut' },
-};
+// muncul setiap kali masuk layar, mengikuti arah gulir (atas/bawah)
+const reveal = scrollReveal(0.2);
 
 // hero selalu di viewport awal — animate langsung agar tak bergantung IntersectionObserver
 const hero = (delay = 0) => ({
@@ -366,7 +363,7 @@ export default function Landing() {
             { icon: MapPin, t: 'Hyperlocal ≤ 2 km', d: 'Yang terdekat, bukan yang terjauh' },
             { icon: Clock, t: 'Info Selalu Akurat', d: 'Diisi langsung oleh pemilik usaha' },
           ].map((u, i) => (
-            <motion.div key={u.t} {...reveal} transition={{ ...reveal.transition, delay: i * 0.08 }} whileHover={{ y: -3 }} className="flex items-start gap-3">
+            <motion.div key={u.t} {...scrollReveal(0.2, i * 0.08)} whileHover={{ y: -3 }} className="flex items-start gap-3">
               <span className="shrink-0 bg-blue-100 text-navy-700 p-2.5 rounded-xl"><u.icon size={19} /></span>
               <div>
                 <p className="font-heading font-bold text-sm">{u.t}</p>
@@ -523,7 +520,7 @@ export default function Landing() {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
           {CATEGORIES.map((c, i) => (
-            <motion.div key={c.label} {...reveal} transition={{ ...reveal.transition, delay: i * 0.03 }} whileHover={{ y: -5 }}>
+            <motion.div key={c.label} {...scrollReveal(0.2, i * 0.03)} whileHover={{ y: -5 }}>
               <Link
                 to="/explore"
                 className="group flex flex-col items-center gap-4 bg-white hover:bg-yellow-500 border border-blue-200 hover:border-yellow-500 rounded-[1.8rem] py-8 px-4 shadow-sm hover:shadow-xl hover:shadow-yellow-500/30 transition-all duration-300"

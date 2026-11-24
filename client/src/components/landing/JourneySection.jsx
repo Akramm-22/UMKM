@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useInView, useReducedMotion } from 'motion/react';
+import { scrollReveal } from '../../lib/scrollReveal.js';
 import {
   UserPlus, Store, ShieldCheck, MapPin, TrendingUp, CircleCheck, Clock, Gift, ArrowRight, ArrowLeft,
   Pause, Play, Camera, Eye, MessageCircle, Navigation,
@@ -170,9 +171,7 @@ export default function JourneySection() {
       <div className="absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-blue-50 to-transparent pointer-events-none" aria-hidden="true" />
       <div className="relative max-w-6xl mx-auto px-5">
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
+          {...scrollReveal(0.3)}
           className="flex flex-col lg:flex-row lg:items-end justify-between gap-4"
         >
           <div className="max-w-xl">
