@@ -113,7 +113,7 @@ export default function Login() {
     setLoading(true);
     try {
       const u = await login(phone, password);
-      navigate(u.role === 'admin' ? '/admin' : u.persona === 'pelaku' ? '/dashboard' : '/explore');
+      navigate(u.landing ?? (u.role === 'admin' ? '/admin' : '/explore'), { replace: true });
     } catch (err) {
       setError(err.response?.data?.message ?? 'Nomor HP atau password salah — coba akun uji di bawah');
     } finally {

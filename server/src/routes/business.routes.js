@@ -80,13 +80,14 @@ router.post('/', requireAuth, async (req, res) => {
       `INSERT INTO businesses (${cols.join(', ')}) VALUES (${cols.map((_, i) => `$${i + 1}`).join(', ')}) RETURNING id, status, created_at`,
       [req.user.id, ...toParams(values)]
     );
+    await query("UPDATE users SET account_type = 'pelaku' WHERE id = $1 AND account_type <> 'pelaku'", [req.user.id]).catch(() => {});
     res.status(201).json(rows[0]);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// perbaiki & ajukan ulang — hanya pemilik, kembali ke antrean verifikasi
+// perbaiki/perbarui data usaha — hanya pemilik; perubahan apa pun kembali ke antrean verifikasi
 router.put('/:id', requireAuth, async (req, res) => {
   const { errors, values } = parseBusiness(req.body);
   if (errors.length) return res.status(400).json({ message: errors[0], errors });
@@ -95,20 +96,51 @@ router.put('/:id', requireAuth, async (req, res) => {
     const n = WRITABLE.length;
     const { rows } = await query(
       `UPDATE businesses SET ${sets}, status = 'pending', review_note = NULL, reviewed_at = NULL, reviewed_by = NULL, updated_at = NOW()
-       WHERE id = $${n + 1} AND owner_id = $${n + 2} AND status IN ('pending', 'rejected') RETURNING id, status, updated_at`,
+       WHERE id = $${n + 1} AND owner_id = $${n + 2} AND status IN ('pending', 'rejected', 'approved') RETURNING id, status, updated_at`,
       [...toParams(values), req.params.id, req.user.id]
     );
-    if (!rows[0]) return res.status(404).json({ message: 'Pengajuan tidak ditemukan atau tidak bisa diubah' });
+    if (!rows[0]) return res.status(404).json({ message: 'Usaha tidak ditemukan atau tidak bisa diubah' });
     res.json(rows[0]);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// usaha milik user yang sedang login (Business Dashboard)
+// info operasional harian (promo & status buka) — tidak perlu verifikasi ulang
+router.patch('/:id/ops', requireAuth, async (req, res) => {
+  const promo = typeof req.body.promo === 'string' ? req.body.promo.trim().slice(0, 80) || null : null;
+  const isOpen = typeof req.body.is_open === 'boolean' ? req.body.is_open : null;
+  try {
+    const { rows } = await query(
+      `UPDATE businesses SET promo = $1, is_open = $2, updated_at = NOW()
+       WHERE id = $3 AND owner_id = $4 RETURNING id, promo, is_open, updated_at`,
+      [promo, isOpen, req.params.id, req.user.id]
+    );
+    if (!rows[0]) return res.status(404).json({ message: 'Usaha tidak ditemukan' });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const { rowCount } = await query('DELETE FROM businesses WHERE id = $1 AND owner_id = $2', [req.params.id, req.user.id]);
+    if (!rowCount) return res.status(404).json({ message: 'Usaha tidak ditemukan' });
+    res.status(204).end();
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// usaha milik user yang sedang login (Business Dashboard) + ringkasan ulasan per usaha
 router.get('/mine', requireAuth, async (req, res) => {
   const { rows } = await query(
-    'SELECT * FROM businesses WHERE owner_id = $1 ORDER BY created_at DESC',
+    `SELECT b.*,
+       (SELECT ROUND(AVG(r.rating)::numeric, 1) FROM reviews r WHERE r.business_id = b.id) AS rating,
+       (SELECT COUNT(*) FROM reviews r WHERE r.business_id = b.id)::int AS review_count,
+       (SELECT COUNT(*) FROM reports p WHERE p.business_id = b.id AND p.status = 'open')::int AS open_reports
+     FROM businesses b WHERE owner_id = $1 ORDER BY created_at DESC`,
     [req.user.id]
   );
   res.json(rows);

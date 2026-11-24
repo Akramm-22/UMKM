@@ -41,6 +41,47 @@ export function StepSpark({ values, color = '#FFC914', height = 26 }) {
   );
 }
 
+// kolom mini: hitungan harian diringkas ke beberapa batang agar data jarang tetap terbaca
+export function MiniBars({ values, color = '#FFC914', bars = 15, height = 40, unit = '' }) {
+  const gid = useId();
+  const size = Math.max(1, Math.ceil(values.length / bars));
+  const buckets = [];
+  for (let i = 0; i < values.length; i += size) buckets.push(values.slice(i, i + size).reduce((s, x) => s + (x ?? 0), 0));
+  const max = Math.max(1, ...buckets);
+  const n = Math.max(1, buckets.length);
+  const gap = 2.2;
+  const bw = (100 - gap * (n - 1)) / n;
+  return (
+    <svg viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" className="w-full" style={{ height }} role="img" aria-label={`Tren ${buckets.join(', ')}`}>
+      <defs>
+        <linearGradient id={gid} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor={color} stopOpacity="0.95" />
+          <stop offset="1" stopColor={color} stopOpacity="0.25" />
+        </linearGradient>
+      </defs>
+      {buckets.map((v, i) => {
+        const h = v ? Math.max(4, (v / max) * (height - 2)) : 2;
+        const last = i === n - 1;
+        return (
+          <motion.rect
+            key={i}
+            x={i * (bw + gap)}
+            width={bw}
+            rx="1"
+            fill={v ? `url(#${gid})` : 'rgba(255,255,255,.16)'}
+            opacity={v && !last ? 0.75 : 1}
+            initial={{ y: height, height: 0 }}
+            animate={{ y: height - h, height: h }}
+            transition={{ duration: 0.6, delay: 0.2 + i * 0.03, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <title>{`${v} ${unit}`.trim()}</title>
+          </motion.rect>
+        );
+      })}
+    </svg>
+  );
+}
+
 // grafik aktivitas: area bertingkat dengan mistar skala & kolom sorot
 export function RouteChart({ labels, series, height = 230 }) {
   const gid = useId();

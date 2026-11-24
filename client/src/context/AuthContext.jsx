@@ -1,5 +1,6 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import axios from 'axios';
+import { demoBusinessCount } from '../lib/myBusinesses.js';
 
 const AuthContext = createContext(null);
 
@@ -16,6 +17,15 @@ export const DUMMY_ACCOUNTS = [
   { phone: '083333333333', password: 'admin123', label: 'Admin', user: DEMO_USERS.admin },
 ];
 
+const personaOf = (u) => (u.role === 'admin' ? 'admin' : u.account_type === 'pelaku' || u.business_count > 0 ? 'pelaku' : 'konsumen');
+
+// tujuan akun demo dihitung dari data perangkat (pengganti DB saat server tidak tersambung)
+function demoLanding(u) {
+  if (u.role === 'admin') return '/admin';
+  if (u.persona !== 'pelaku') return '/explore';
+  return demoBusinessCount(u) > 0 ? '/dashboard' : '/usaha';
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('pl_user') ?? 'null'));
 
@@ -25,30 +35,53 @@ export function AuthProvider({ children }) {
     setUser(u);
   };
 
+  const fromServer = (data) => {
+    const { landing, ...rest } = data.user;
+    const u = { ...rest, persona: personaOf(rest) };
+    persist(u, data.token);
+    return { ...u, landing };
+  };
+
   const login = async (phone, password) => {
     // akun dummy dicek lebih dulu agar login berfungsi tanpa database
     const dummy = DUMMY_ACCOUNTS.find((a) => a.phone === phone.trim() && a.password === password);
     if (dummy) {
+      localStorage.removeItem('pl_token');
       persist(dummy.user);
-      return dummy.user;
+      return { ...dummy.user, landing: demoLanding(dummy.user) };
     }
     const { data } = await axios.post('/api/auth/login', { phone, password });
-    const u = { ...data.user, persona: data.user.role === 'admin' ? 'admin' : 'konsumen' };
-    persist(u, data.token);
-    return u;
+    return fromServer(data);
   };
 
-  const register = async (name, phone, password) => {
-    const { data } = await axios.post('/api/auth/register', { name, phone, password });
-    const u = { ...data.user, persona: 'konsumen' };
-    persist(u, data.token);
-    return u;
+  const register = async (name, phone, password, accountType = 'konsumen') => {
+    const { data } = await axios.post('/api/auth/register', { name, phone, password, account_type: accountType });
+    return fromServer(data);
   };
+
+  // status akun terbaru dari server (jumlah usaha, jenis akun) — dipakai halaman pelaku usaha
+  const refreshProfile = useCallback(async () => {
+    const current = JSON.parse(localStorage.getItem('pl_user') ?? 'null');
+    if (!current) return null;
+    const token = localStorage.getItem('pl_token');
+    if (current.demo || !token) return { ...current, business_count: demoBusinessCount(current), landing: demoLanding(current) };
+    const { data } = await axios.get('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } });
+    const { landing, ...rest } = data;
+    const u = { ...current, ...rest, persona: personaOf(rest) };
+    persist(u);
+    return { ...u, landing };
+  }, []);
 
   const loginDemo = (persona) => {
     const u = DEMO_USERS[persona];
     persist(u);
     return u;
+  };
+
+  // pengguna yang baru mendaftarkan usaha otomatis menjadi pelaku usaha
+  const becomePelaku = () => {
+    if (!user || user.role === 'admin' || user.persona === 'pelaku') return;
+    persist({ ...user, persona: 'pelaku' });
   };
 
   const logout = () => {
@@ -58,10 +91,27 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, loginDemo, logout }}>
+    <AuthContext.Provider value={{ user, login, register, loginDemo, logout, becomePelaku, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
 export const useAuth = () => useContext(AuthContext);
+
+// apakah pengguna sudah punya usaha terdaftar — dicek ulang ke server (DB), bukan dari sesi tersimpan
+export function useBusinessStatus() {
+  const { user, refreshProfile } = useAuth();
+  const [count, setCount] = useState(() => user?.business_count ?? null);
+  const uid = user?.id;
+  const isAdmin = user?.role === 'admin';
+  useEffect(() => {
+    if (uid == null || isAdmin) return undefined;
+    let live = true;
+    refreshProfile()
+      .then((p) => { if (live) setCount(p?.business_count ?? 0); })
+      .catch(() => {});
+    return () => { live = false; };
+  }, [uid, isAdmin, refreshProfile]);
+  return { count, hasBusiness: (count ?? 0) > 0, loading: count == null };
+}

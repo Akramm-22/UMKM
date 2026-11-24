@@ -194,7 +194,7 @@ export function approvedPlaces() {
   return [
     ...readJson(LOCAL_SUBMISSIONS).filter((s) => s.status === 'approved').map((s) => ({ ...strip(s), id: `local-${s.id}` })),
     ...DEMO_SUBMISSIONS.filter((s) => decisions[s.id]?.status === 'approved').map((s) => ({ ...strip(s), id: `sub-${s.id}` })),
-  ].map((s) => toPlace({ ...s, is_open: null, promo: null, created_at: s.submitted_at }));
+  ].map((s) => toPlace({ ...s, is_open: s.is_open ?? null, promo: s.promo ?? null, created_at: s.submitted_at }));
 }
 
 export const verificationLog = () => readJson(LOG_KEY);

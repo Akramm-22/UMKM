@@ -116,4 +116,4 @@ export const toParams = (v) => WRITABLE.map((k) => (JSON_COLS.has(k) && v[k] != 
 // kolom publik — owner_id_doc (KTP) sengaja tidak disertakan
 export const PUBLIC_COLUMNS = `id, owner_id, name, category, subcategory, description, established_year, photo_url, photos,
   phone, website, instagram, address, address_detail, latitude, longitude, open_hours, price_range, services,
-  payments, amenities, menu, status, created_at, updated_at`;
+  payments, amenities, menu, promo, is_open, status, created_at, updated_at`;

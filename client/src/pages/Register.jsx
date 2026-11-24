@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { MapPin, Phone, Lock, User, Eye, EyeOff, ArrowRight, ArrowLeft, Check, CircleAlert, ShieldCheck } from 'lucide-react';
+import { MapPin, Phone, Lock, User, Eye, EyeOff, ArrowRight, ArrowLeft, Check, CircleAlert, ShieldCheck, Store } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { AuthSidePanel } from './Login.jsx';
 import BackButton from '../components/BackButton.jsx';
@@ -62,7 +62,7 @@ export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState({ name: '', phone: '', password: '', confirm: '' });
+  const [form, setForm] = useState({ name: '', phone: '', password: '', confirm: '', accountType: 'konsumen' });
   const [touched, setTouched] = useState({});
   const [agree, setAgree] = useState(false);
   const [showPw, setShowPw] = useState(false);
@@ -90,8 +90,8 @@ export default function Register() {
     if (!stepValid || !agree) return;
     setLoading(true);
     try {
-      await register(form.name, form.phone, form.password);
-      navigate('/explore');
+      const u = await register(form.name, form.phone, form.password, form.accountType);
+      navigate(u.landing ?? '/explore', { replace: true });
     } catch (err) {
       setServerError(err.response?.data?.message ?? 'Server tidak terhubung — gunakan mode demo di halaman Masuk');
     } finally {
@@ -167,6 +167,33 @@ export default function Register() {
                   transition={{ duration: 0.25, ease: 'easeOut' }}
                   className="space-y-4"
                 >
+                  <div>
+                    <p className="block text-xs font-bold text-navy-700 mb-1.5">Daftar sebagai</p>
+                    <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Jenis akun">
+                      {[
+                        { k: 'konsumen', icon: User, t: 'Konsumen', d: 'Cari usaha sekitar' },
+                        { k: 'pelaku', icon: Store, t: 'Pelaku Usaha', d: 'Daftarkan usahaku' },
+                      ].map((o) => {
+                        const on = form.accountType === o.k;
+                        return (
+                          <button
+                            key={o.k}
+                            type="button"
+                            role="radio"
+                            aria-checked={on}
+                            onClick={() => setForm((f) => ({ ...f, accountType: o.k }))}
+                            className={`flex items-center gap-2.5 text-left rounded-xl px-3 py-2.5 border transition-colors ${on ? 'border-navy-800 bg-navy-800 text-blue-50' : 'border-blue-200 hover:border-navy-600 text-navy-700'}`}
+                          >
+                            <o.icon size={17} className={on ? 'text-yellow-500' : 'text-navy-500'} />
+                            <span className="leading-tight">
+                              <span className="block text-xs font-bold">{o.t}</span>
+                              <span className={`block text-[10px] ${on ? 'text-blue-300' : 'text-navy-500'}`}>{o.d}</span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                   <Field label="Nama Lengkap" error={showErr('name')} valid={validOf('name')}>
                     <User size={17} className="text-navy-500 shrink-0" />
                     <input

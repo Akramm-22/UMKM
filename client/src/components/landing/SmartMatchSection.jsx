@@ -263,7 +263,7 @@ function SwipeStack({ items, favs, onFav, onReset }) {
                 className={`absolute inset-x-0 top-0 bg-white border border-blue-200 rounded-3xl p-4 shadow-xl shadow-navy-800/10 ${top ? 'cursor-grab touch-pan-y' : 'pointer-events-none'}`}
               >
                 <div className="flex gap-3.5">
-                  <img src={b.photo} alt="" draggable="false" className="w-20 h-20 rounded-2xl object-cover bg-blue-100 shrink-0" />
+                  <img src={b.photo} alt="" draggable="false" loading="lazy" decoding="async" className="w-20 h-20 rounded-2xl object-cover bg-blue-100 shrink-0" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <p className="font-heading font-extrabold leading-tight truncate">{b.name}</p>

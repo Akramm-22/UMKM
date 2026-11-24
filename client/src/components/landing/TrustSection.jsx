@@ -50,7 +50,7 @@ function VerifyDemo() {
   return (
     <div ref={ref} className="relative mt-6 flex-1 rounded-2xl bg-navy-800 ring-1 ring-white/10 p-4 sm:p-5">
       <div className="flex items-center gap-3">
-        <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=160&q=70" alt="" className="w-12 h-12 rounded-xl object-cover" />
+        <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=160&q=70" alt="" loading="lazy" decoding="async" className="w-12 h-12 rounded-xl object-cover" />
         <div className="min-w-0">
           <p className="font-heading font-bold text-sm truncate">Warung Nasi Bu Siti</p>
           <p className="text-[11px] text-blue-300">Pengajuan baru · ditinjau admin</p>

@@ -95,3 +95,8 @@ ALTER TABLE businesses ADD COLUMN IF NOT EXISTS services JSONB;
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS payments JSONB;
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS amenities JSONB;
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS menu JSONB;
+-- info operasional yang dikelola pemilik dari dashboard
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS promo VARCHAR(80);
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS is_open BOOLEAN;
+-- jenis akun non-admin: menentukan halaman tujuan setelah login
+ALTER TABLE users ADD COLUMN IF NOT EXISTS account_type VARCHAR(10) NOT NULL DEFAULT 'konsumen';

@@ -29,4 +29,13 @@ app.use('/api/businesses', businessRoutes);
 app.use('/api/admin', adminRoutes);
 
 const PORT = process.env.PORT || 5000;
+
+// migrasi ringan & idempoten untuk kolom yang dikelola pemilik dari dashboard
+pool
+  .query(`ALTER TABLE businesses ADD COLUMN IF NOT EXISTS promo VARCHAR(80);
+    ALTER TABLE businesses ADD COLUMN IF NOT EXISTS is_open BOOLEAN;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS account_type VARCHAR(10) NOT NULL DEFAULT 'konsumen';
+    UPDATE users SET account_type = 'pelaku' WHERE account_type <> 'pelaku' AND id IN (SELECT owner_id FROM businesses);`)
+  .catch((err) => console.warn('⚠️ Migrasi kolom dashboard dilewati:', err.message));
+
 app.listen(PORT, () => console.log(`✅ Server jalan di http://localhost:${PORT}`));

@@ -7,7 +7,7 @@ import {
   ChefHat, CupSoda, Wheat, Hammer, Scissors, WashingMachine, Cookie, Shirt,
   Leaf, Flame, Citrus, X, LayoutGrid, LogOut, Sparkles,
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext.jsx';
+import { useAuth, useBusinessStatus } from '../context/AuthContext.jsx';
 import { DEMO_BUSINESSES, toCard } from '../lib/demoPlaces.js';
 import SectionTag from '../components/landing/SectionTag.jsx';
 import TrendingSection from '../components/landing/TrendingSection.jsx';
@@ -61,6 +61,7 @@ const hero = (delay = 0) => ({
 
 export default function Landing() {
   const { user, logout } = useAuth();
+  const { hasBusiness } = useBusinessStatus();
   const navigate = useNavigate();
   const [q, setQ] = useState('');
   const [profileOpen, setProfileOpen] = useState(false);
@@ -93,9 +94,9 @@ export default function Landing() {
     <div className="min-h-screen bg-white font-body text-navy-800 overflow-x-clip">
       {/* ═══ Navbar pill navy — selalu terlihat, area sekitarnya blur ═══ */}
       <header className="sticky top-0 z-50">
-        {/* zona frosted-glass: konten yang lewat di bawah navbar jadi blur, memudar ke bawah */}
+        {/* zona pudar di bawah navbar: gradasi biasa (bukan backdrop-blur) agar scroll tetap ringan */}
         <div
-          className="absolute inset-x-0 top-0 h-24 backdrop-blur-md bg-blue-50/40 pointer-events-none [mask-image:linear-gradient(to_bottom,black_55%,transparent)]"
+          className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-blue-50/80 to-blue-50/0 pointer-events-none"
           aria-hidden="true"
         />
         <div
@@ -128,8 +129,8 @@ export default function Landing() {
               </>
             )}
             {user && user.role !== 'admin' && (
-              <MotionLink to="/daftar-usaha" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.95 }} className="flex items-center gap-1.5 bg-yellow-500 hover:bg-yellow-400 text-navy-800 text-sm font-heading font-bold px-5 py-2.5 rounded-full transition-colors">
-                <Store size={15} /> Daftar Usaha
+              <MotionLink to={hasBusiness ? '/dashboard' : '/daftar-usaha'} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.95 }} className="flex items-center gap-1.5 bg-yellow-500 hover:bg-yellow-400 text-navy-800 text-sm font-heading font-bold px-5 py-2.5 rounded-full transition-colors">
+                {hasBusiness ? <><LayoutGrid size={15} /> Dashboard</> : <><Store size={15} /> Daftar Usaha</>}
               </MotionLink>
             )}
             {user && user.role === 'admin' && (
@@ -167,15 +168,14 @@ export default function Landing() {
                           <Link to="/admin" className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-blue-50 transition-colors">
                             <LayoutGrid size={15} className="text-navy-500" /> Dashboard Admin
                           </Link>
+                        ) : hasBusiness ? (
+                          <Link to="/dashboard" className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-blue-50 transition-colors">
+                            <LayoutGrid size={15} className="text-navy-500" /> Dashboard
+                          </Link>
                         ) : (
-                          <>
-                            <Link to="/daftar-usaha" className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-blue-50 transition-colors">
-                              <Store size={15} className="text-navy-500" /> Daftar Usaha
-                            </Link>
-                            <Link to="/dashboard" className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-blue-50 transition-colors">
-                              <LayoutGrid size={15} className="text-navy-500" /> Dashboard Usaha
-                            </Link>
-                          </>
+                          <Link to="/daftar-usaha" className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-blue-50 transition-colors">
+                            <Store size={15} className="text-navy-500" /> Daftar Usaha
+                          </Link>
                         )}
                         <Link to="/explore" className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-blue-50 transition-colors">
                           <MapPin size={15} className="text-navy-500" /> Peta Usaha
@@ -410,7 +410,7 @@ export default function Landing() {
                 </div>
                 {FEATURED.slice(0, 4).map((b) => (
                   <div key={b.name} className="flex items-center gap-2">
-                    <img src={b.img} alt="" className="w-9 h-9 rounded-lg object-cover" />
+                    <img src={b.img} alt="" loading="lazy" decoding="async" className="w-9 h-9 rounded-lg object-cover" />
                     <div className="min-w-0">
                       <p className="text-[10px] font-bold truncate">{b.name}</p>
                       <p className="text-[9px] text-navy-500 flex items-center gap-0.5">
@@ -454,7 +454,7 @@ export default function Landing() {
                 ))}
                 {/* kartu info di peta */}
                 <div className="absolute right-3 bottom-3 bg-white rounded-xl shadow-lg p-2.5 flex items-center gap-2">
-                  <img src={PHOTOS.sate} alt="" className="w-9 h-9 rounded-lg object-cover" />
+                  <img src={PHOTOS.sate} alt="" loading="lazy" decoding="async" className="w-9 h-9 rounded-lg object-cover" />
                   <div>
                     <p className="text-[10px] font-bold">Sate Ayam Bang Jali</p>
                     <p className="text-[9px] text-navy-500">2.1 km · ±6 menit</p>
@@ -563,7 +563,7 @@ export default function Landing() {
       <section className="bg-blue-50 border-t border-blue-200">
         <div className="max-w-6xl mx-auto px-5 py-16">
         <motion.div {...reveal} className="relative overflow-hidden rounded-3xl">
-          <img src={PHOTOS.mie} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          <img src={PHOTOS.mie} alt="" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
           <div className="absolute inset-0 bg-navy-900/80" />
           <div className="relative px-8 py-14 sm:px-14 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="text-center sm:text-left">
@@ -575,12 +575,12 @@ export default function Landing() {
               </p>
             </div>
             <MotionLink
-              to="/register"
+              to={user && user.role !== 'admin' ? (hasBusiness ? '/dashboard' : '/daftar-usaha') : '/register'}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.96 }}
               className="shrink-0 flex items-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-navy-800 font-heading font-bold px-7 py-4 rounded-full shadow-lg shadow-yellow-500/25 transition-colors"
             >
-              <Store size={18} /> Daftarkan Usaha
+              {hasBusiness && user?.role !== 'admin' ? <><LayoutGrid size={18} /> Dashboard</> : <><Store size={18} /> Daftarkan Usaha</>}
             </MotionLink>
           </div>
         </motion.div>

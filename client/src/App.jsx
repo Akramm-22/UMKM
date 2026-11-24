@@ -5,6 +5,7 @@ import Landing from './pages/Landing.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import BusinessDashboard from './pages/BusinessDashboard.jsx';
+import PelakuHome from './pages/PelakuHome.jsx';
 import BusinessRegister from './pages/BusinessRegister.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import AdminCommand from './pages/AdminCommand.jsx';
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<Protected><BusinessDashboard /></Protected>} />
+          <Route path="/usaha" element={<Protected><PelakuHome /></Protected>} />
           <Route path="/daftar-usaha" element={<Protected><BusinessRegister /></Protected>} />
           <Route path="/admin" element={<Protected admin><AdminDashboard /></Protected>} />
           <Route path="/admin/peta" element={<Protected admin><AdminCommand /></Protected>} />

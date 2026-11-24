@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { LogOut, LayoutGrid, Store, MapPin, Heart, ShieldCheck, Phone, ChevronRight } from 'lucide-react';
-import { useAuth } from '../context/AuthContext.jsx';
+import { useAuth, useBusinessStatus } from '../context/AuthContext.jsx';
 
 const ROLE_LABEL = (u) => (u.role === 'admin' ? 'Administrator' : u.persona === 'pelaku' ? 'Pelaku Usaha' : 'Konsumen');
 
@@ -23,6 +23,7 @@ export function Avatar({ user, size = 40, className = '' }) {
 // avatar pojok kanan atas; tombol Keluar sengaja hanya ada di dalam pop-up
 export default function ProfileMenu({ className = '', logoutTo = '/' }) {
   const { user, logout } = useAuth();
+  const { hasBusiness } = useBusinessStatus();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
@@ -48,8 +49,9 @@ export default function ProfileMenu({ className = '', logoutTo = '/' }) {
     ]
     : [
       { to: '/explore', icon: MapPin, label: 'Peta Usaha' },
-      ...(user.persona === 'pelaku' ? [{ to: '/dashboard', icon: LayoutGrid, label: 'Dashboard Usaha' }] : []),
-      { to: '/daftar-usaha', icon: Store, label: 'Daftarkan Usaha' },
+      hasBusiness
+        ? { to: '/dashboard', icon: LayoutGrid, label: 'Dashboard' }
+        : { to: '/daftar-usaha', icon: Store, label: 'Daftar Usaha' },
     ];
 
   const doLogout = () => {

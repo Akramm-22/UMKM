@@ -28,7 +28,7 @@ export function Button({ variant = 'primary', size = 'md', state = 'idle', icon:
         ) : state === 'success' ? (
           <motion.span key="s" initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0.5, opacity: 0 }} transition={{ type: 'spring', stiffness: 500, damping: 20 }}><Check size={16} weight="bold" /></motion.span>
         ) : Icon ? (
-          <motion.span key="i" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="transition-transform group-hover:-rotate-6 group-hover:scale-110"><Icon size={size === 'sm' ? 15 : 17} weight="duotone" /></motion.span>
+          <motion.span key="i" initial={false} exit={{ opacity: 0 }} className="flex transition-transform group-hover:-rotate-6 group-hover:scale-110"><Icon size={size === 'sm' ? 15 : 17} weight="duotone" /></motion.span>
         ) : null}
       </AnimatePresence>
       {children}

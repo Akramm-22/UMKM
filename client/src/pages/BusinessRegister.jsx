@@ -139,7 +139,7 @@ function PhotoSlot({ label, hint, value, onChange, error, required, private: isP
 const fmtRp = (n) => `Rp${Number(n).toLocaleString('id-ID')}`;
 
 export default function BusinessRegister() {
-  const { user } = useAuth();
+  const { user, becomePelaku } = useAuth();
   const [params] = useSearchParams();
   const editId = params.get('edit');
   const draftKey = `pl_business_draft_${user?.id ?? 'anon'}`;
@@ -332,6 +332,7 @@ export default function BusinessRegister() {
       }
     }
     localStorage.removeItem(draftKey);
+    becomePelaku();
     setLoading(false);
     setDone(true);
   };
@@ -349,7 +350,7 @@ export default function BusinessRegister() {
           </p>
           {demoNote && <p className="text-[11px] text-yellow-600 bg-yellow-500/10 rounded-lg px-3 py-2 mt-3">Mode demo: data tersimpan di perangkat karena server database belum terhubung.</p>}
           <div className="flex gap-2.5 mt-6">
-            <Link to="/dashboard" className="flex-1 bg-navy-800 hover:bg-navy-700 text-blue-50 text-sm font-bold py-3 rounded-xl transition-colors">Ke Dashboard Usaha</Link>
+            <Link to="/dashboard?view=usaha" className="flex-1 bg-navy-800 hover:bg-navy-700 text-blue-50 text-sm font-bold py-3 rounded-xl transition-colors">Ke Dashboard Usaha</Link>
             <Link to="/explore" className="flex-1 bg-blue-100 hover:bg-blue-200 text-navy-700 text-sm font-bold py-3 rounded-xl transition-colors">Lihat Peta</Link>
           </div>
         </motion.div>
@@ -367,7 +368,7 @@ export default function BusinessRegister() {
             <span className="bg-navy-800 text-yellow-500 p-1.5 rounded-full"><MapPin size={16} /></span>
             PesanLokal<span className="text-yellow-500">.</span>
           </Link>
-          <Link to="/dashboard" className="ml-auto flex items-center gap-1 text-xs font-bold text-navy-500 hover:text-navy-800 transition-colors">
+          <Link to="/dashboard?view=usaha" className="ml-auto flex items-center gap-1 text-xs font-bold text-navy-500 hover:text-navy-800 transition-colors">
             <ArrowLeft size={13} /> Kembali
           </Link>
         </motion.div>

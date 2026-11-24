@@ -113,7 +113,7 @@ export default function TrendingSection({ onSelect }) {
 
   return (
     <section id="promo" className="relative bg-blue-50 border-y border-blue-200 py-16 overflow-hidden">
-      <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-yellow-500/10 blur-3xl pointer-events-none" aria-hidden="true" />
+      <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(255,201,20,.14) 0%, rgba(255,201,20,0) 65%)' }} aria-hidden="true" />
       <div className="relative max-w-6xl mx-auto px-5">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -197,7 +197,7 @@ export default function TrendingSection({ onSelect }) {
               >
                 <div className="relative h-44">
                   <div className="absolute inset-0 overflow-hidden">
-                    <img src={b.img} alt={b.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
+                    <img src={b.img} alt={b.name} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
                     <div className="absolute inset-0 bg-gradient-to-t from-navy-900/40 to-transparent" aria-hidden="true" />
                   </div>
                   <div className="absolute top-3.5 left-3.5 flex flex-col items-start gap-1.5">
