@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -10,6 +10,8 @@ import {
   Loader2, AlertTriangle, Lightbulb, FileClock, MoreHorizontal, ExternalLink, Info, ChevronDown,
 } from 'lucide-react';
 import ProfileMenu from '../components/ProfileMenu.jsx';
+import BackButton from '../components/BackButton.jsx';
+import { LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { weeklyHours, openStatus } from '../lib/place.js';
 import { PAYMENT_OPTIONS, AMENITY_OPTIONS, labelOf } from '../lib/businessForm.js';
@@ -80,7 +82,7 @@ function FlyTo({ center }) {
 function StatusBadge({ status, className = '' }) {
   const m = statusOf(status);
   return (
-    <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${m.cls} ${className}`}>
+    <span className={`${/(^|\s)hidden(\s|$)/.test(className) ? '' : 'inline-flex'} items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${m.cls} ${className}`}>
       <m.icon size={11} /> {m.label}
     </span>
   );
@@ -347,7 +349,12 @@ function PromoModal({ b, onClose, onSave }) {
 
 /* ═══════════════ halaman ═══════════════ */
 export default function BusinessDashboard() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const doLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
   const [params, setParams] = useSearchParams();
   const view = VIEWS.some((v) => v.key === params.get('view')) ? params.get('view') : 'home';
   const [list, setList] = useState([]);
@@ -363,6 +370,10 @@ export default function BusinessDashboard() {
   const [filter, setFilter] = useState('semua');
   const [q, setQ] = useState('');
   const [revBiz, setRevBiz] = useState('semua');
+
+  useEffect(() => {
+    document.querySelector('[data-mobile-nav] [aria-current="page"]')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+  }, [view]);
 
   const go = useCallback((v, extra = {}) => {
     const next = new URLSearchParams(params);
@@ -506,12 +517,15 @@ export default function BusinessDashboard() {
         <div className="flex items-center gap-2">
           <Link to="/" className="flex items-center gap-2 font-heading font-extrabold text-base text-blue-50">
             <span className="bg-yellow-500 text-navy-800 p-1.5 rounded-full"><MapPin size={14} /></span>
-            PesanLokal<span className="text-yellow-500">.</span>
+            <span>PesanLokal<span className="text-yellow-500">.</span></span>
           </Link>
-          <span className="text-[9px] font-bold uppercase tracking-widest text-navy-500 mt-0.5">Usaha</span>
-          <ProfileMenu className="ml-auto" logoutTo="/login" />
+          <span className="text-[10px] font-bold uppercase tracking-widest text-navy-500 mt-0.5">Usaha</span>
+          <button type="button" onClick={doLogout} className="ml-auto inline-flex items-center gap-1.5 min-h-10 px-3 rounded-xl text-xs font-bold text-blue-200 bg-navy-700 hover:bg-danger hover:text-white transition-colors" aria-label="Keluar dari akun">
+            <LogOut size={15} /> <span className="hidden min-[380px]:inline">Keluar</span>
+          </button>
+          <ProfileMenu logoutTo="/login" />
         </div>
-        <nav className="flex gap-2 mt-2.5 overflow-x-auto no-scrollbar" aria-label="Menu dashboard">
+        <nav data-mobile-nav className="flex gap-2 mt-2.5 overflow-x-auto no-scrollbar" aria-label="Menu dashboard">
           {VIEWS.map((n) => (
             <button key={n.key} type="button" onClick={() => go(n.key)} aria-current={view === n.key ? 'page' : undefined} className={`shrink-0 flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-full transition-colors ${view === n.key ? 'bg-yellow-500 text-navy-800' : 'bg-navy-700 text-blue-300'}`}>
               <n.icon size={13} /> {n.label}
@@ -525,7 +539,7 @@ export default function BusinessDashboard() {
         <div className="blob-morph absolute -top-16 -right-16 w-48 h-48 bg-yellow-500/10 pointer-events-none" aria-hidden="true" />
         <Link to="/" className="relative flex items-center gap-2 font-heading font-extrabold text-lg text-blue-50">
           <span className="bg-yellow-500 text-navy-800 p-1.5 rounded-full"><MapPin size={16} /></span>
-          PesanLokal<span className="text-yellow-500">.</span>
+          <span>PesanLokal<span className="text-yellow-500">.</span></span>
         </Link>
         <p className="relative text-[10px] font-bold uppercase tracking-widest text-navy-500 mt-1.5 ml-0.5">Dashboard Pelaku Usaha</p>
 
@@ -558,6 +572,9 @@ export default function BusinessDashboard() {
               <p className="text-[10px] text-navy-500">{list.length} usaha dikelola</p>
             </div>
           </div>
+          <button type="button" onClick={doLogout} className="mt-2 w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-xs font-semibold text-blue-300 hover:bg-danger/15 hover:text-red-300 transition-colors">
+            <LogOut size={14} /> Keluar
+          </button>
         </div>
       </aside>
 
@@ -567,6 +584,7 @@ export default function BusinessDashboard() {
           {/* topbar */}
           <motion.div {...rise(0)} className="flex flex-wrap items-end gap-3">
             <div className="min-w-0 flex-1">
+              <BackButton fallback="/" className="mb-2" />
               <p className="hidden sm:flex items-center gap-1.5 text-[11px] text-navy-500 font-semibold mb-1">
                 <Home size={12} /> Usaha <ChevronRight size={12} /> <span className="text-navy-700">{VIEWS.find((v) => v.key === view)?.label}</span>
               </p>
@@ -582,7 +600,7 @@ export default function BusinessDashboard() {
                 }[view]}
               </p>
             </div>
-            {view !== 'update' && <AddButton className="hidden sm:inline-flex lg:hidden xl:inline-flex" />}
+            {view !== 'update' && <div className="hidden sm:block lg:hidden xl:block"><AddButton /></div>}
           </motion.div>
 
           {state === 'loading' && (
@@ -638,7 +656,7 @@ export default function BusinessDashboard() {
                         <motion.section {...rise(0.12)} className="lg:col-span-7 bg-white border border-blue-200 rounded-2xl overflow-hidden">
                           <div className="flex items-center justify-between px-5 py-3.5 border-b border-blue-100">
                             <p className="font-heading font-bold text-sm">Usaha kamu</p>
-                            <button type="button" onClick={() => go('usaha')} className="text-[11px] font-bold text-navy-600 hover:text-navy-900 flex items-center gap-1">Kelola semua <ArrowRight size={12} /></button>
+                            <button type="button" onClick={() => go('usaha')} className="text-[11px] font-bold text-navy-600 hover:text-navy-900 flex items-center gap-1 py-2 -my-2">Kelola semua <ArrowRight size={12} /></button>
                           </div>
                           <ul className="divide-y divide-blue-100">
                             {list.slice(0, 4).map((b) => (

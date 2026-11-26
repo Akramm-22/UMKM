@@ -286,7 +286,7 @@ export default function SubmissionReview({ item, onClose, onDecide, sla, adminNa
                     {d.url ? (
                       <button type="button" onClick={() => setLightbox(d)} className="relative block w-full aspect-[4/3] group" aria-label={`Perbesar ${d.type}`}>
                         <img src={d.url} alt={d.type} className="w-full h-full object-cover" />
-                        {d.private && <span className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-navy-800/90 text-blue-50 text-[9px] font-bold px-1.5 py-0.5 rounded"><Lock size={9} /> Rahasia</span>}
+                        {d.private && <span className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-navy-800/90 text-blue-50 text-[10px] font-bold px-1.5 py-0.5 rounded"><Lock size={10} /> Rahasia</span>}
                         <span className="absolute inset-0 bg-navy-900/0 group-hover:bg-navy-900/40 flex items-center justify-center transition-colors">
                           <ZoomIn size={20} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                         </span>

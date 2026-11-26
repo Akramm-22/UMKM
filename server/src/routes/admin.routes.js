@@ -16,6 +16,25 @@ router.get('/businesses/pending', async (_req, res) => {
   res.json(rows);
 });
 
+// peta komando: seluruh usaha terdaftar (semua status) untuk memantau persebaran
+router.get('/businesses/map', async (_req, res) => {
+  try {
+    const { rows } = await query(
+      `SELECT b.id, b.name, b.category, b.subcategory, b.description, b.established_year, b.address, b.phone, b.website, b.instagram,
+              b.latitude, b.longitude, b.status, b.photo_url, b.open_hours, b.price_range, b.payments, b.promo, b.is_open,
+              b.created_at, b.updated_at, b.reviewed_at, b.review_note, u.name AS owner_name, u.phone AS owner_phone,
+              (SELECT ROUND(AVG(r.rating)::numeric, 1) FROM reviews r WHERE r.business_id = b.id)::float AS rating,
+              (SELECT COUNT(*)::int FROM reviews r WHERE r.business_id = b.id) AS review_count,
+              (SELECT COUNT(*)::int FROM reports p WHERE p.business_id = b.id AND p.status = 'open') AS open_reports
+       FROM businesses b JOIN users u ON u.id = b.owner_id
+       ORDER BY b.created_at DESC`
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.patch('/businesses/:id/status', async (req, res) => {
   const { status } = req.body;
   const reason = typeof req.body.reason === 'string' ? req.body.reason.trim().slice(0, 1000) : null;

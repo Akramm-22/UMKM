@@ -5,7 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'motion/react';
-import { Star, Navigation, X, LocateFixed, List, AlertTriangle, ChevronLeft, ChevronRight, Tag, Radar } from 'lucide-react';
+import { Star, Navigation, X, LocateFixed, List, AlertTriangle, ChevronLeft, ChevronRight, Tag, Radar, Search } from 'lucide-react';
 import FloatingHeader from './FloatingHeader.jsx';
 import BusinessDetailPanel, { googleTravelMode } from './BusinessDetailPanel.jsx';
 import SmartSearchHints from './SmartSearchHints.jsx';
@@ -143,6 +143,7 @@ function BusinessListItem({ biz, active, distance, why, rank, onClick, onRoute, 
 
 export default function ExploreMap() {
   const { user } = useAuth();
+  const restricted = user?.role !== 'admin';
   const [params, setParams] = useSearchParams();
   const [businesses, setBusinesses] = useState(() => {
     const hidden = suspendedLocalIds();
@@ -218,16 +219,30 @@ export default function ExploreMap() {
   useEffect(() => { setFavorites(user ? getFavorites(user.id) : []); }, [user]);
 
   useEffect(() => {
+    const token = localStorage.getItem('pl_token');
+    // admin boleh memuat seluruh usaha sekitar; role lain hanya lewat pencarian
+    if (user?.role === 'admin' && token) {
+      axios
+        .get('/api/businesses', { params: { lat: DEFAULT_CENTER[0], lng: DEFAULT_CENTER[1], radius: 5 }, headers: { Authorization: `Bearer ${token}` } })
+        .then((res) => {
+          if (res.data.length > 0) {
+            setBusinesses(res.data.map(toPlace));
+            setDemoMode(false);
+          }
+        })
+        .catch(() => {});
+      return;
+    }
     axios
-      .get('/api/businesses', { params: { lat: DEFAULT_CENTER[0], lng: DEFAULT_CENTER[1], radius: 5 } })
+      .get('/api/health')
       .then((res) => {
-        if (res.data.length > 0) {
-          setBusinesses(res.data.map(toPlace));
+        if (res.data?.status === 'ok') {
+          setBusinesses([]);
           setDemoMode(false);
         }
       })
       .catch(() => {});
-  }, []);
+  }, [user?.role]);
 
   // tautan bagikan /explore?usaha=ID langsung membuka detail tempat
   useEffect(() => {
@@ -390,6 +405,8 @@ export default function ExploreMap() {
   }, [q, demoMode, searchOrigin[0], searchOrigin[1]]);
 
   const visible = useMemo(() => {
+    // selain admin: peta kosong sampai pengguna mencari atau memilih lokasi
+    if (restricted && !q && !nearbyOf) return [];
     const pool = q && serverPool?.q === q ? serverPool.items : businesses;
     const base = pool.filter((b) => {
       if (filter !== 'semua' && b.category !== filter) return false;
@@ -402,7 +419,7 @@ export default function ExploreMap() {
     return base
       .map((b) => ({ biz: b, dist: distanceKm(anchor, [b.latitude, b.longitude]) }))
       .sort((a, b) => a.dist - b.dist);
-  }, [businesses, serverPool, q, parsed, filter, onlyOpen, onlyPromo, onlyFav, favorites, nearbyOf, anchor]);
+  }, [restricted, businesses, serverPool, q, parsed, filter, onlyOpen, onlyPromo, onlyFav, favorites, nearbyOf, anchor]);
 
   const filtering = Boolean(q) || filter !== 'semua' || onlyOpen || onlyPromo || onlyFav || Boolean(nearbyOf);
   const resultPoints = useMemo(() => visible.slice(0, 20).map((v) => [v.biz.latitude, v.biz.longitude]), [visible]);
@@ -452,6 +469,18 @@ export default function ExploreMap() {
   const resetFilters = () => { setFilter('semua'); setOnlyOpen(false); setOnlyPromo(false); setOnlyFav(false); setSearch(''); setNearbyOf(null); };
 
   const resultList = (onPick) => (
+    restricted && !q && !nearbyOf ? (
+      <div className="px-6 py-10 text-center">
+        <span className="mx-auto w-12 h-12 rounded-2xl bg-blue-100 text-navy-600 flex items-center justify-center"><Search size={22} /></span>
+        <p className="text-sm font-bold text-navy-800 mt-3">Cari usaha untuk menampilkannya di peta</p>
+        <p className="text-xs text-navy-500 mt-1">Ketik nama usaha, jenis, atau area — lokasi yang kamu pilih akan muncul di peta.</p>
+        <div className="flex flex-wrap justify-center gap-2 mt-4">
+          {['warung terdekat', 'kopi', 'laundry', 'toko sembako'].map((s) => (
+            <button key={s} type="button" onClick={() => submitSearch(s)} className="text-xs font-semibold text-navy-700 bg-blue-50 ring-1 ring-blue-200 hover:bg-blue-100 px-3 py-1.5 rounded-full transition-colors">{s}</button>
+          ))}
+        </div>
+      </div>
+    ) : (
     <>
       {!nearbyOf && (
         <SmartSearchHints
@@ -495,13 +524,14 @@ export default function ExploreMap() {
         </div>
       )}
     </>
+    )
   );
 
   const panelOpen = Boolean(selected) && !collapsed && !navigating;
   const sheetVh = panelView === 'directions' ? 50 : 72;
   const gmapsUrl = route ? `https://www.google.com/maps/dir/?api=1&origin=${userPos[0]},${userPos[1]}&destination=${route.dest[0]},${route.dest[1]}&travelmode=${googleTravelMode(route.mode)}` : '#';
   const showRouteCard = route && !navigating && !routing && (!selected || collapsed || (!isDesktop() && !panelOpen));
-  const resultCount = `${visible.length} hasil · urut ${nearbyOf ? `jarak ${originLabel}` : sortedBy}`;
+  const resultCount = restricted && !q && !nearbyOf ? 'Belum ada pencarian' : `${visible.length} hasil · urut ${nearbyOf ? `jarak ${originLabel}` : sortedBy}`;
 
   const searchBox = (variant) => (
     <SearchBox
@@ -509,7 +539,7 @@ export default function ExploreMap() {
       onChange={(v) => { setSearch(v); setNearbyOf(null); }}
       onSubmit={submitSearch}
       onPickPlace={pickPlace}
-      pool={businesses}
+      pool={q && serverPool?.q === q ? serverPool.items : businesses}
       origin={searchOrigin}
       variant={variant}
       placeholder="Coba: warung terdekat, kuliner murah…"
@@ -621,7 +651,7 @@ export default function ExploreMap() {
           <BaseTiles layer={layer} />
           <BusinessMarkers
             items={visible}
-            context={filtering ? businesses : []}
+            context={filtering && !restricted ? businesses : []}
             selectedId={selected?.id ?? preview?.id}
             hoveredId={hoveredId}
             favorites={favorites}

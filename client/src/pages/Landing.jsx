@@ -106,7 +106,7 @@ export default function Landing() {
         >
           <Link to="/" className="flex items-center gap-2 font-heading font-extrabold text-lg shrink-0">
             <span className="bg-yellow-500 text-navy-800 p-1.5 rounded-full"><MapPin size={17} /></span>
-            PesanLokal<span className="text-yellow-500">.</span>
+            <span>PesanLokal<span className="text-yellow-500">.</span></span>
           </Link>
           <div className="hidden lg:flex items-center gap-7 text-sm font-semibold text-blue-300 mx-auto">
             <Link to="/explore" className="hover:text-yellow-500 transition-colors">Peta Usaha</Link>

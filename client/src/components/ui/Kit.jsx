@@ -10,7 +10,7 @@ const BTN = {
   danger: 'bg-danger text-white hover:brightness-110 shadow-key',
   glass: 'bg-white/10 text-blue-50 hover:bg-white/20 ring-1 ring-white/15',
 };
-const SIZE = { sm: 'h-8 px-3 text-xs gap-1.5', md: 'h-10 px-4 text-sm gap-2', icon: 'h-9 w-9 justify-center' };
+const SIZE = { sm: 'h-8 px-3 text-xs gap-1.5', md: 'h-10 px-4 text-sm gap-2', icon: 'h-9 w-9 shrink-0 justify-center' };
 
 // tombol bertekstur "tuts" (bayangan bawah) yang turun saat ditekan; state: idle | loading | success
 export function Button({ variant = 'primary', size = 'md', state = 'idle', icon: Icon, children, className = '', ...props }) {

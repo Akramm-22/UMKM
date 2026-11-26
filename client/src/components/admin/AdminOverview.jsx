@@ -170,10 +170,10 @@ export default function AdminOverview({ refreshKey, queue, onOpenQueue, sla = 24
               </span>
             </div>
 
-            <div className="relative flex items-center gap-5">
-              <div className="relative w-28 h-28 shrink-0">
+            <div className="relative flex items-center gap-4 sm:gap-5">
+              <div className="relative w-24 h-24 sm:w-28 sm:h-28 shrink-0">
               <div className="absolute inset-3 rounded-full bg-yellow-500/10 blur-xl" aria-hidden="true" />
-              <svg viewBox="0 0 100 100" className="relative w-28 h-28 -rotate-90" aria-hidden="true">
+              <svg viewBox="0 0 100 100" className="relative w-full h-full -rotate-90" aria-hidden="true">
                 <defs>
                   <linearGradient id="ring-tayang" x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0" stopColor="#FFE08A" />
@@ -188,12 +188,12 @@ export default function AdminOverview({ refreshKey, queue, onOpenQueue, sla = 24
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center" aria-hidden="true">
                 <span className="font-data font-bold text-2xl text-white leading-none"><CountUp value={approvalRate} suffix="%" /></span>
-                <span className="text-[9px] uppercase tracking-widest text-blue-300 mt-1">tayang</span>
+                <span className="text-[10px] uppercase tracking-widest text-blue-300 mt-1">tayang</span>
               </div>
               </div>
               <div className="min-w-0">
                 <p className="text-[11px] uppercase tracking-widest text-blue-300 font-semibold">Tingkat tayang</p>
-                <p className="font-heading font-extrabold text-xl text-white leading-snug mt-1">
+                <p className="font-heading font-extrabold text-lg sm:text-xl text-white leading-snug mt-1">
                   <span className="font-data text-yellow-400">{b.approved ?? 0}</span> dari <span className="font-data">{totalBiz}</span> usaha sudah tampil di peta
                 </p>
                 <p className="sr-only">Tingkat tayang {approvalRate} persen</p>
@@ -228,7 +228,7 @@ export default function AdminOverview({ refreshKey, queue, onOpenQueue, sla = 24
                 ))}
               </div>
               <Button variant="glass" size="icon" state={btn} icon={ArrowsClockwise} onClick={() => load()} aria-label="Muat ulang data" title="Muat ulang" />
-              <span className="ml-auto font-data text-[10px] text-blue-400">diperbarui {updated}</span>
+              <span className="ml-auto font-data text-[10px] text-blue-400 text-right leading-tight">diperbarui {updated}</span>
             </div>
           </div>
 
@@ -370,7 +370,7 @@ export default function AdminOverview({ refreshKey, queue, onOpenQueue, sla = 24
             {buckets.map((x) => (
               <li key={x.l} className={`rounded-lg px-2 py-2 text-center ring-1 ${x.late && x.n ? 'bg-danger/10 ring-danger/30 text-danger' : 'bg-blue-50 ring-navy-800/5 text-navy-700'}`}>
                 <p className="font-data font-bold text-base leading-none">{x.n}</p>
-                <p className="text-[9px] mt-1 leading-tight">{x.l}</p>
+                <p className="text-[10px] mt-1 leading-tight">{x.l}</p>
               </li>
             ))}
           </ul>

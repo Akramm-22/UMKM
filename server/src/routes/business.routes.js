@@ -1,19 +1,31 @@
 import { Router } from 'express';
 import { query } from '../db.js';
-import { requireAuth } from '../middlewares/auth.middleware.js';
+import { requireAuth, optionalAuth } from '../middlewares/auth.middleware.js';
 import { parseBusiness, WRITABLE, toParams, PUBLIC_COLUMNS } from '../validators/business.js';
 import { parseQuery, searchBusinesses, describe } from '../../../shared/smartSearch.mjs';
 
 const router = Router();
 
-// GET /api/businesses?lat=-6.2&lng=106.8&radius=2  (radius dalam km)
-router.get('/', async (req, res) => {
+// GET /api/businesses?lat=-6.2&lng=106.8&radius=2&q=kopi  (radius dalam km)
+// hanya admin yang boleh melihat seluruh usaha sekitar; role lain wajib menyertakan kata kunci pencarian
+router.get('/', optionalAuth, async (req, res) => {
   const { lat, lng, radius = 2 } = req.query;
   if (!lat || !lng) {
     return res.status(400).json({ message: 'Parameter lat dan lng wajib diisi' });
   }
+  const isAdmin = req.user?.role === 'admin';
+  const q = String(req.query.q ?? '').trim().slice(0, 100);
+  if (!isAdmin && q.length < 2) {
+    return res.status(403).json({ message: 'Lakukan pencarian terlebih dahulu untuk menampilkan usaha' });
+  }
   try {
     // haversine via SQL untuk hitung jarak dari titik pengguna
+    const params = [lat, lng];
+    let match = '';
+    if (q) {
+      params.push(`%${q}%`);
+      match = `AND (name ILIKE $3 OR subcategory ILIKE $3 OR category ILIKE $3 OR address ILIKE $3)`;
+    }
     const { rows } = await query(
       `SELECT ${PUBLIC_COLUMNS},
          (6371 * acos(
@@ -22,10 +34,10 @@ router.get('/', async (req, res) => {
            sin(radians($1)) * sin(radians(latitude))
          )) AS distance_km
        FROM businesses
-       WHERE status = 'approved'
+       WHERE status = 'approved' ${match}
        ORDER BY distance_km
        LIMIT 50`,
-      [lat, lng]
+      params
     );
     res.json(rows.filter((r) => r.distance_km <= Number(radius)));
   } catch (err) {
@@ -34,13 +46,18 @@ router.get('/', async (req, res) => {
 });
 
 // Smart Search: GET /api/businesses/search?q=warung terdekat&lat=-6.2&lng=106.8
-router.get('/search', async (req, res) => {
+router.get('/search', optionalAuth, async (req, res) => {
   const lat = Number(req.query.lat);
   const lng = Number(req.query.lng);
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
     return res.status(400).json({ message: 'Lokasi (lat, lng) tidak valid' });
   }
-  const parsed = parseQuery(String(req.query.q ?? '').slice(0, 100));
+  const rawQ = String(req.query.q ?? '').trim().slice(0, 100);
+  // tanpa kata kunci, hanya admin yang boleh menerima daftar usaha
+  if (req.user?.role !== 'admin' && rawQ.length < 2) {
+    return res.json({ parsed: { chips: [], sortedBy: null, areaMatchedByAddress: false }, results: [] });
+  }
+  const parsed = parseQuery(rawQ);
   const radius = Math.min(25, Math.max(1, Number(req.query.radius) || 10));
   try {
     const { rows } = await query(

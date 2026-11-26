@@ -138,6 +138,10 @@ export default function AdminDashboard() {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('semua');
   const [notifOpen, setNotifOpen] = useState(false);
+
+  useEffect(() => {
+    document.querySelector('[data-mobile-nav] [aria-current="page"]')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+  }, [view]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [settings, setSettings] = useState(loadSettings);
   const [savedSettings, setSavedSettings] = useState(settings);
@@ -309,12 +313,12 @@ export default function AdminDashboard() {
         <div className="flex items-center gap-2">
           <Link to="/" className="flex items-center gap-2 font-heading font-extrabold text-base text-blue-50">
             <span className="bg-yellow-500 text-navy-800 p-1.5 rounded-full"><MapPin size={14} /></span>
-            PesanLokal<span className="text-yellow-500">.</span>
+            <span>PesanLokal<span className="text-yellow-500">.</span></span>
           </Link>
-          <span className="text-[9px] font-bold uppercase tracking-widest text-navy-500 mt-0.5">Admin</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-navy-500 mt-0.5">Admin</span>
           <ProfileMenu className="ml-auto" logoutTo="/login" />
         </div>
-        <nav className="flex gap-2 mt-2.5 overflow-x-auto no-scrollbar">
+        <nav data-mobile-nav className="flex gap-2 mt-2.5 overflow-x-auto no-scrollbar">
           {NAV.map((n) => {
             const active = view === n.key;
             if (n.to) {
@@ -328,13 +332,14 @@ export default function AdminDashboard() {
               <button
                 key={n.key}
                 onClick={() => setView(n.key)}
+                aria-current={active ? 'page' : undefined}
                 className={`shrink-0 flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-full transition-colors ${
                   active ? 'bg-yellow-500 text-navy-800' : 'bg-navy-700 text-blue-300'
                 }`}
               >
                 <n.icon size={13} /> {n.label}
                 {n.badge ? (
-                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${active ? 'bg-navy-800 text-yellow-500' : 'bg-yellow-500 text-navy-800'}`}>{n.badge}</span>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${active ? 'bg-navy-800 text-yellow-500' : 'bg-yellow-500 text-navy-800'}`}>{n.badge}</span>
                 ) : null}
               </button>
             );

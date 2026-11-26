@@ -54,11 +54,11 @@ function Recenter({ pos }) {
 function Field({ label, hint, error, children, htmlFor, required }) {
   return (
     <div>
-      <div className="flex items-baseline justify-between gap-2 mb-1.5">
-        <label htmlFor={htmlFor} className="block text-xs font-bold text-navy-700">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 mb-1.5">
+        <label htmlFor={htmlFor} className="block shrink-0 text-xs font-bold text-navy-700">
           {label}{required && <span className="text-danger"> *</span>}
         </label>
-        {hint && <span className="text-[10px] text-navy-500 text-right">{hint}</span>}
+        {hint && <span className="text-[11px] text-navy-500 sm:text-right">{hint}</span>}
       </div>
       {children}
       <AnimatePresence>
@@ -366,7 +366,7 @@ export default function BusinessRegister() {
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
           <Link to="/" className="flex items-center gap-2 font-heading font-extrabold text-lg">
             <span className="bg-navy-800 text-yellow-500 p-1.5 rounded-full"><MapPin size={16} /></span>
-            PesanLokal<span className="text-yellow-500">.</span>
+            <span>PesanLokal<span className="text-yellow-500">.</span></span>
           </Link>
           <Link to="/dashboard?view=usaha" className="ml-auto flex items-center gap-1 text-xs font-bold text-navy-500 hover:text-navy-800 transition-colors">
             <ArrowLeft size={13} /> Kembali
@@ -393,7 +393,7 @@ export default function BusinessRegister() {
             <RotateCcw size={14} className="text-info shrink-0" />
             <span className="flex-1 text-navy-700">Draf sebelumnya dipulihkan otomatis.</span>
             <button type="button" onClick={resetDraft} className="font-bold text-danger hover:underline">Mulai dari awal</button>
-            <button type="button" onClick={() => setRestored(false)} className="text-navy-500" aria-label="Tutup info draf"><X size={14} /></button>
+            <button type="button" onClick={() => setRestored(false)} className="text-navy-500 hover:text-navy-800 p-2 -m-2 rounded-lg" aria-label="Tutup info draf"><X size={14} /></button>
           </div>
         )}
 

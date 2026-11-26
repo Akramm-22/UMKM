@@ -9,8 +9,11 @@ const BG = '#16294F';
 const INK = '#F4F8FC';
 const YELLOW = '#FFC914';
 
-// babak: kurir melintas di depan pasar → adegan turun → logo dirakit → titik muat
-const T = { rideIn: 0.35, rideOut: 1.85, sceneOut: 2.3, logo: 2.55, dots: 3.35 };
+// babak: warga jalan kaki ke warung terdekat → adegan turun → logo dirakit → titik muat
+const T = { walkIn: 0.3, arrive: 1.75, sceneOut: 2.3, logo: 2.55, dots: 3.35 };
+const STEPS = 3;
+const WALK_FROM = -46;
+const WALK_TO = 158;
 
 const CLOUD = 'M0 14h10c0-6 5-10 11-9 2-4 6-6 10-5 5 1 8 5 8 9 4 0 7 2 7 5H62';
 const CLOUDS = [
@@ -200,83 +203,114 @@ function Market() {
         <rect x="144" y="184" width="16" height="22" rx="8" fill="#8FBEDC" />
         <rect x="204" y="184" width="16" height="22" rx="8" fill="#8FBEDC" />
         <rect x="160" y="172" width="44" height="8" rx="2" fill={YELLOW} />
+        <text x="182" y="178.4" textAnchor="middle" fontSize="5.6" fontWeight="800" letterSpacing=".6" fill={BG} fontFamily="Plus Jakarta Sans, sans-serif">WARUNG</text>
       </motion.g>
     </g>
   );
 }
 
-function Wheel({ cx, reduce }) {
+// penanda tujuan: pin jatuh di atap warung lalu berdenyut
+function Destination({ reduce }) {
   return (
-    <g transform={`translate(${cx} 40)`}>
-      <circle r="7.5" fill="#0A1428" />
-      <circle r="3.2" fill={INK} />
-      <motion.g animate={reduce ? undefined : { rotate: 360 }} transition={{ duration: 0.35, repeat: Infinity, ease: 'linear' }}>
-        <line x1="-5.5" y1="0" x2="5.5" y2="0" stroke="#3A5680" strokeWidth="1.2" />
-      </motion.g>
-    </g>
-  );
-}
-
-// kurir PesanLokal dengan kotak antar
-function Scooter({ reduce }) {
-  return (
-    <motion.g
-      initial={{ x: -110 }}
-      animate={reduce ? { x: 150 } : { x: [-110, 150, 150, 440] }}
-      transition={{ duration: T.rideOut + 0.55 - T.rideIn, delay: T.rideIn, times: [0, 0.45, 0.72, 1], ease: ['easeOut', 'linear', 'easeIn'] }}
-    >
-      <g transform="translate(0 182) scale(1.35)">
-      <ellipse cx="31" cy="48" rx="30" ry="2.6" fill="#0A1428" opacity=".45" />
-      {/* kepulan debu saat tancap gas */}
-      {!reduce && [0, 1, 2].map((i) => (
-        <motion.circle
-          key={`d${i}`} cx={-4 - i * 7} cy={44 - i * 2} r={3 + i}
-          fill={INK}
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: [0, 0.5, 0], scale: [0, 1, 1.6], x: [0, -10] }}
-          transition={{ duration: 0.7, delay: T.rideIn + 1.45 + i * 0.07, ease: 'easeOut' }}
+    <g>
+      {!reduce && [0, 1].map((i) => (
+        <motion.ellipse
+          key={i} cx="182" cy="101" rx="10" ry="3.4" fill="none" stroke={YELLOW} strokeWidth="1.2"
+          initial={{ opacity: 0, scale: 0.4 }}
+          animate={{ opacity: [0, 0.8, 0], scale: [0.4, 1.8, 2.4] }}
+          transition={{ duration: 1.3, delay: 0.75 + i * 0.5, repeat: Infinity, repeatDelay: 0.2, ease: 'easeOut' }}
           style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
         />
       ))}
-      {/* gelembung pesanan saat kurir berhenti */}
-      {!reduce && (
+      <motion.g
+        initial={{ y: reduce ? 0 : -60, opacity: 0 }}
+        animate={reduce ? { y: 0, opacity: 1 } : { y: [-60, 0, -5, 0], opacity: 1 }}
+        transition={{ duration: 0.7, delay: 0.55, times: [0, 0.6, 0.8, 1], ease: 'easeOut' }}
+      >
+        <path d="M182 74c-6.5 0-11 4.6-11 10.4 0 7.6 11 16.6 11 16.6s11-9 11-16.6C193 78.6 188.5 74 182 74z" fill="#E05252" stroke={INK} strokeWidth="1.4" />
+        <circle cx="182" cy="84.6" r="4" fill={INK} />
+      </motion.g>
+    </g>
+  );
+}
+
+// warga berjalan kaki ke warung terdekat sambil melihat peta di ponsel
+function Walker({ reduce }) {
+  const walk = T.arrive - T.walkIn;
+  const cycle = walk / STEPS;
+  const limb = { transformBox: 'fill-box', originX: 0.5, originY: 0 };
+  const swing = (dir) => (reduce ? undefined : { rotate: [0, 26 * dir, 0, -26 * dir, 0] });
+  const swingT = { duration: cycle, delay: T.walkIn, repeat: STEPS - 1, ease: 'linear' };
+  const chip = (w) => ({ x: -10 - w, w });
+  const a = chip(80);
+  const b = chip(74);
+  return (
+    <motion.g
+      initial={{ x: reduce ? WALK_TO : WALK_FROM }}
+      animate={{ x: WALK_TO }}
+      transition={reduce ? { duration: 0 } : { duration: walk, delay: T.walkIn, ease: [0.3, 0.1, 0.45, 1] }}
+    >
+      <g transform="translate(0 202)">
+        <ellipse cx="1" cy="40" rx="11" ry="2" fill="#0A1428" opacity=".45" />
+        <motion.g animate={reduce ? undefined : { y: [0, -1.6, 0, -1.6, 0] }} transition={swingT}>
+          {/* kaki & lengan belakang, berayun berlawanan */}
+          <motion.g style={limb} animate={swing(-1)} transition={swingT}>
+            <rect x="-2.2" y="23" width="4.4" height="16" rx="2.2" fill="#22396A" />
+            <path d="M-2.4 37.5h6.6a1.8 1.8 0 0 1 0 3.2h-6.6z" fill="#0A1428" />
+          </motion.g>
+          <motion.g style={limb} animate={swing(1)} transition={swingT}>
+            <rect x="-1.8" y="9" width="3.6" height="13" rx="1.8" fill={SKIN} />
+            <path d="M-1 19.5v-2.5a1 1 0 0 1 2 0v2.5" fill="none" stroke={INK} strokeWidth="1" />
+            <path d="M-5 19.5h10l-1.2 9h-7.6z" fill={INK} />
+            <path d="M-2.4 23h4.8" stroke="#E05252" strokeWidth="1.4" strokeLinecap="round" />
+          </motion.g>
+          {/* badan */}
+          <rect x="-6" y="7" width="12" height="18" rx="5" fill={YELLOW} />
+          <path d="M-2.6 7.4l2.6 3.2 2.6-3.2" fill="none" stroke={BG} strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+          <motion.g style={limb} animate={swing(1)} transition={swingT}>
+            <rect x="-2.2" y="23" width="4.4" height="16" rx="2.2" fill="#2B4A7A" />
+            <path d="M-2.4 37.5h6.6a1.8 1.8 0 0 1 0 3.2h-6.6z" fill="#0A1428" />
+          </motion.g>
+          {/* kepala */}
+          <circle cx="1" cy="0" r="6" fill={SKIN} />
+          <path d="M-5 0a6 6 0 0 1 12 0c-2.2-1.6-6-2.2-12 0z" fill="#0A1428" />
+          <circle cx="4.4" cy="0.4" r=".8" fill="#0A1428" />
+          {/* lengan depan memegang ponsel berisi peta */}
+          <path d="M1.5 10.5l5.5 6.5 3.4-3.6" fill="none" stroke={SKIN} strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="9" y="6.5" width="5.4" height="8.6" rx="1.2" fill="#0A1428" />
+          <motion.rect
+            x="9.9" y="7.6" width="3.6" height="5.6" rx=".6" fill={YELLOW}
+            animate={reduce ? undefined : { opacity: [0.55, 1, 0.55] }}
+            transition={{ duration: 0.8, repeat: Infinity }}
+          />
+        </motion.g>
+
+        {/* gelembung arah saat berjalan → berganti "sampai" ketika tiba */}
+        {!reduce && (
+          <motion.g
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: [0, 1, 1, 0], scale: [0, 1.08, 1, 0.85] }}
+            transition={{ duration: walk, delay: T.walkIn + 0.1, times: [0, 0.14, 0.86, 1] }}
+            style={{ transformBox: 'fill-box', transformOrigin: 'right center' }}
+          >
+            <rect x={a.x} y="-13" width={a.w} height="15" rx="7.5" fill={INK} />
+            <path d="M-10.6 -8.4l5 2.9-5 2.9z" fill={INK} />
+            <path d={`M${a.x + 8} -9.6c-2.4 0-4 1.7-4 3.9 0 2.8 4 6 4 6s4-3.2 4-6c0-2.2-1.6-3.9-4-3.9z`} fill="#E05252" />
+            <text x={a.x + 15} y="-2.6" fontSize="7" fontWeight="800" fill={BG} fontFamily="Plus Jakarta Sans, sans-serif">Warung · 120 m</text>
+          </motion.g>
+        )}
         <motion.g
           initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: [0, 1, 1, 0], scale: [0, 1.1, 1, 0.8] }}
-          transition={{ duration: 0.95, delay: T.rideIn + 0.85, times: [0, 0.25, 0.8, 1] }}
-          style={{ transformBox: 'fill-box', transformOrigin: 'bottom center' }}
+          animate={{ opacity: 1, scale: reduce ? 1 : [0, 1.12, 1] }}
+          transition={{ duration: 0.4, delay: reduce ? 0 : T.arrive }}
+          style={{ transformBox: 'fill-box', transformOrigin: 'right center' }}
         >
-          <rect x="6" y="-26" width="52" height="17" rx="8.5" fill={INK} />
-          <path d="M28 -9.5l4 5 4-5z" fill={INK} />
-          <circle cx="15" cy="-17.5" r="5" fill={YELLOW} />
-          <path d="M13 -18.5h4l-.4 3h-3.2z" fill={BG} />
-          <text x="23" y="-14.5" fontSize="7.5" fontWeight="800" fill={BG} fontFamily="Plus Jakarta Sans, sans-serif">+1 order</text>
+          <rect x={b.x} y="-13" width={b.w} height="15" rx="7.5" fill={YELLOW} />
+          <path d="M-10.6 -8.4l5 2.9-5 2.9z" fill={YELLOW} />
+          <circle cx={b.x + 8} cy="-5.5" r="4" fill={BG} />
+          <path d={`M${b.x + 6.2} -5.6l1.4 1.4 2.6-2.8`} fill="none" stroke={YELLOW} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+          <text x={b.x + 15} y="-2.6" fontSize="7" fontWeight="800" fill={BG} fontFamily="Plus Jakarta Sans, sans-serif">Sampai! 2 mnt</text>
         </motion.g>
-      )}
-      <motion.g animate={reduce ? undefined : { y: [0, -1.4, 0] }} transition={{ duration: 0.3, repeat: Infinity }}>
-        {/* garis kecepatan */}
-        {[0, 1, 2].map((i) => (
-          <motion.line
-            key={i} x1={-14 - i * 6} y1={14 + i * 9} x2={-36 - i * 10} y2={14 + i * 9}
-            stroke={INK} strokeWidth="1.6" strokeLinecap="round"
-            animate={reduce ? { opacity: 0 } : { opacity: [0, 0.8, 0], x: [6, -6] }}
-            transition={{ duration: 0.45, repeat: Infinity, delay: i * 0.1 }}
-          />
-        ))}
-        {/* kotak antar */}
-        <rect x="-2" y="2" width="24" height="20" rx="3" fill={YELLOW} />
-        <path d="M10 7.5a3.6 3.6 0 0 1 3.6 3.6c0 2.6-3.6 5.6-3.6 5.6s-3.6-3-3.6-5.6A3.6 3.6 0 0 1 10 7.5z" fill={BG} />
-        {/* pengendara */}
-        <path d="M26 30l6-16h8l4 16z" fill={INK} />
-        <circle cx="36" cy="7" r="7" fill={YELLOW} />
-        <path d="M37 3.5h6.5a6 6 0 0 1-1.5 5H37z" fill="#0A1428" opacity=".8" />
-        <path d="M38 18l12 6" stroke={INK} strokeWidth="3.4" strokeLinecap="round" />
-        {/* bodi skuter */}
-        <path d="M4 34c0-6 6-9 14-9h12l6 6h10l6-14h5l-5 17c4 1 7 4 7 8H4z" fill="#E05252" />
-        <path d="M50 17h6" stroke="#0A1428" strokeWidth="2.4" strokeLinecap="round" />
-        <Wheel cx={10} reduce={reduce} />
-        <Wheel cx={52} reduce={reduce} />
-      </motion.g>
       </g>
     </motion.g>
   );
@@ -292,22 +326,30 @@ function Scene({ reduce }) {
       transition={reduce ? { duration: 0.2 } : { duration: T.sceneOut + 0.45, times: [0, T.sceneOut / (T.sceneOut + 0.45), 1], ease: 'easeIn' }}
       aria-hidden="true"
     >
-      <defs>
-        <clipPath id="splash-road"><rect x="-200" y="230" width="760" height="40" /></clipPath>
-      </defs>
       <Backdrop reduce={reduce} />
       <Market />
       <Bunting reduce={reduce} />
       <VendorCart reduce={reduce} />
-      {/* jalan dengan marka yang bergulir */}
-      <motion.rect x="-200" y="230" width="760" height="38" fill="#0F1E38" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.6, ease: 'easeOut' }} style={{ originX: 0.5, transformBox: 'fill-box' }} />
-      <rect x="-200" y="230" width="760" height="2" fill="#3A5680" />
-      <g clipPath="url(#splash-road)">
-        <motion.g animate={reduce ? undefined : { x: [0, -40] }} transition={{ duration: 0.5, repeat: Infinity, ease: 'linear' }}>
-          {Array.from({ length: 22 }, (_, i) => <rect key={i} x={-200 + i * 40} y="248" width="20" height="2.4" rx="1.2" fill={INK} opacity=".55" />)}
-        </motion.g>
-      </g>
-      <Scooter reduce={reduce} />
+      <Destination reduce={reduce} />
+      {/* trotoar berpaving + jalan kampung */}
+      <motion.g initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.6, ease: 'easeOut' }} style={{ originX: 0.5, transformBox: 'fill-box' }}>
+        <rect x="-200" y="230" width="760" height="20" fill="#22396A" />
+        <rect x="-200" y="230" width="760" height="2" fill="#3A5680" />
+        {Array.from({ length: 38 }, (_, i) => <rect key={i} x={-200 + i * 20} y="232" width="1" height="18" fill="#16294F" />)}
+        <rect x="-200" y="250" width="760" height="3" fill="#D6E6F2" opacity=".55" />
+        <rect x="-200" y="253" width="760" height="16" fill="#0F1E38" />
+        {Array.from({ length: 22 }, (_, i) => <rect key={`m${i}`} x={-200 + i * 40} y="260" width="20" height="2" rx="1" fill={INK} opacity=".35" />)}
+      </motion.g>
+      {/* rute jalan kaki dari aplikasi */}
+      <motion.line
+        x1={WALK_FROM - 30} y1="244" x2={WALK_TO + 12} y2="244"
+        stroke={YELLOW} strokeWidth="2" strokeDasharray="1 5" strokeLinecap="round"
+        initial={{ scaleX: reduce ? 1 : 0, opacity: 0.9 }}
+        animate={reduce ? { scaleX: 1 } : { scaleX: 1, opacity: [0.9, 0.9, 0.25] }}
+        transition={{ scaleX: { duration: 0.55, delay: 0.15, ease: 'easeOut' }, opacity: { duration: T.arrive, times: [0, 0.8, 1] } }}
+        style={{ originX: 0, transformBox: 'fill-box' }}
+      />
+      <Walker reduce={reduce} />
     </motion.svg>
   );
 }

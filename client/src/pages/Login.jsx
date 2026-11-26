@@ -122,7 +122,7 @@ export default function Login() {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-blue-100 bg-dots flex items-center justify-center p-4 font-body">
+    <div className="h-dvh overflow-hidden bg-blue-100 bg-dots flex items-center justify-center p-3 sm:p-4 font-body">
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -135,11 +135,11 @@ export default function Login() {
         />
 
         {/* form kanan */}
-        <div className="p-8 sm:p-10 flex flex-col justify-center overflow-y-auto no-scrollbar">
+        <div className="p-6 sm:p-10 flex flex-col [justify-content:safe_center] overflow-y-auto no-scrollbar">
           <BackButton fallback="/" variant="ghost" className="self-start -ml-2 -mt-2 mb-2" />
           <Link to="/" className="flex items-center justify-center gap-2 font-heading font-extrabold text-xl text-navy-800">
             <span className="bg-navy-800 text-yellow-500 p-2 rounded-full"><MapPin size={18} /></span>
-            PesanLokal<span className="text-yellow-500">.</span>
+            <span>PesanLokal<span className="text-yellow-500">.</span></span>
           </Link>
           <h1 className="font-heading font-extrabold text-2xl sm:text-3xl text-navy-800 text-center mt-5">Selamat Datang 👋</h1>
           <p className="text-navy-500 text-sm text-center mt-1.5">Silakan masuk ke akunmu</p>
@@ -170,7 +170,7 @@ export default function Login() {
                 autoComplete="current-password"
                 className="w-full outline-none text-navy-800 placeholder:text-navy-500/60 bg-transparent text-sm"
               />
-              <button type="button" onClick={() => setShowPw((v) => !v)} className="text-navy-500 hover:text-navy-800 transition-colors" aria-label="Tampilkan password">
+              <button type="button" onClick={() => setShowPw((v) => !v)} className="text-navy-500 hover:text-navy-800 transition-colors p-2 -m-2 rounded-lg" aria-label="Tampilkan password">
                 {showPw ? <EyeOff size={17} /> : <Eye size={17} />}
               </button>
             </div>
@@ -214,7 +214,7 @@ export default function Login() {
                 >
                   <r.icon size={17} className={selected ? 'text-yellow-500' : ''} />
                   {r.label}
-                  <span className={`text-[9px] font-normal ${selected ? 'text-blue-300' : 'text-navy-500'}`}>{acc.phone}</span>
+                  <span className={`text-[10px] font-normal ${selected ? 'text-blue-300' : 'text-navy-500'}`}>{acc.phone}</span>
                 </motion.button>
               );
             })}

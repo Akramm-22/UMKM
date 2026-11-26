@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
   MapPin, Plus, ArrowRight, BadgeCheck, Wallet, MessageCircle, Megaphone, ClipboardList, FileText, Hourglass, LayoutGrid,
-  Camera, Phone, Clock, UtensilsCrossed, IdCard, ChevronDown, Sparkles, Store, Map as MapIcon,
+  Camera, Phone, Clock, UtensilsCrossed, IdCard, ChevronDown, Sparkles, Store, Map as MapIcon, LogOut,
 } from 'lucide-react';
 import ProfileMenu from '../components/ProfileMenu.jsx';
+import BackButton from '../components/BackButton.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
 const rise = (delay = 0) => ({
@@ -46,8 +47,13 @@ const FAQ = [
 
 // Home Pelaku Usaha: untuk akun pelaku yang belum memiliki usaha terdaftar
 export default function PelakuHome() {
-  const { user, refreshProfile } = useAuth();
+  const { user, refreshProfile, logout } = useAuth();
+  const navigate = useNavigate();
   const [count, setCount] = useState(null);
+  const doLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
 
   // jumlah usaha diambil ulang dari server, bukan dari sesi tersimpan
   useEffect(() => {
@@ -62,15 +68,19 @@ export default function PelakuHome() {
     <div className="min-h-screen bg-blue-50 font-body text-navy-800">
       {/* header */}
       <header className="sticky top-0 z-40 bg-navy-800 text-blue-50">
-        <div className="max-w-6xl mx-auto px-5 h-16 flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-2 font-heading font-extrabold text-lg">
-            <span className="bg-yellow-500 text-navy-800 p-1.5 rounded-full"><MapPin size={16} /></span>
-            PesanLokal<span className="text-yellow-500">.</span>
+        <div className="max-w-6xl mx-auto px-4 sm:px-5 h-16 flex items-center gap-2 sm:gap-4">
+          <BackButton fallback="/" variant="dark" className="shrink-0 max-sm:!min-h-9 max-sm:!px-2.5 [&>span]:hidden sm:[&>span]:inline" />
+          <Link to="/" className="flex items-center gap-2 font-heading font-extrabold text-lg min-w-0" aria-label="PesanLokal">
+            <span className="bg-yellow-500 text-navy-800 p-1.5 rounded-full shrink-0"><MapPin size={16} /></span>
+            <span>PesanLokal<span className="text-yellow-500">.</span></span>
           </Link>
           <span className="hidden sm:inline text-[10px] font-bold uppercase tracking-widest text-navy-500">Pelaku Usaha</span>
-          <nav className="ml-auto flex items-center gap-1.5 sm:gap-3 text-sm font-semibold text-blue-300">
+          <nav className="ml-auto shrink-0 flex items-center gap-1.5 sm:gap-3 text-sm font-semibold text-blue-300">
             <Link to="/explore" className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg hover:text-yellow-500 transition-colors"><MapIcon size={15} /> Peta</Link>
             {owns && <Link to="/dashboard" className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg hover:text-yellow-500 transition-colors"><LayoutGrid size={15} /> Dashboard</Link>}
+            <button type="button" onClick={doLogout} className="inline-flex items-center gap-1.5 min-h-9 px-3 rounded-xl text-xs font-bold text-blue-200 bg-navy-700 hover:bg-danger hover:text-white transition-colors" aria-label="Keluar dari akun">
+              <LogOut size={15} /> <span className="hidden sm:inline">Keluar</span>
+            </button>
             <ProfileMenu logoutTo="/login" />
           </nav>
         </div>
@@ -99,12 +109,12 @@ export default function PelakuHome() {
             <p className="text-navy-500 mt-4 max-w-lg leading-relaxed">
               Akunmu sudah siap sebagai Pelaku Usaha. Langkah berikutnya: daftarkan usaha pertamamu. Setelah diverifikasi admin, usahamu tampil di peta dan bisa kamu kelola dari dashboard.
             </p>
-            <div className="flex flex-wrap items-center gap-3 mt-7">
-              <Link to={cta.to} className="group inline-flex items-center gap-2.5 bg-yellow-500 hover:bg-yellow-400 text-navy-900 font-heading font-bold pl-3 pr-5 py-3.5 rounded-2xl shadow-xl shadow-yellow-500/30 active:translate-y-px transition-colors">
+            <div className="grid sm:flex sm:flex-wrap items-stretch gap-3 mt-7">
+              <Link to={cta.to} className="group inline-flex items-center justify-center gap-2.5 bg-yellow-500 hover:bg-yellow-400 text-navy-900 font-heading font-bold pl-3 pr-5 py-3.5 rounded-2xl shadow-xl shadow-yellow-500/30 active:translate-y-px transition-colors">
                 <span className="w-8 h-8 rounded-xl bg-navy-900 text-yellow-400 flex items-center justify-center transition-transform group-hover:rotate-90"><cta.Icon size={17} strokeWidth={3} /></span>
                 {cta.label}
               </Link>
-              <a href="#alur" className="inline-flex items-center gap-1.5 text-sm font-bold text-navy-700 hover:text-navy-900 px-4 py-3.5 rounded-2xl ring-1 ring-blue-200 hover:bg-white transition-colors">Pelajari alurnya <ChevronDown size={15} /></a>
+              <a href="#alur" className="inline-flex items-center justify-center gap-1.5 text-sm font-bold text-navy-700 hover:text-navy-900 px-4 py-3.5 rounded-2xl ring-1 ring-blue-200 hover:bg-white transition-colors">Pelajari alurnya <ChevronDown size={15} /></a>
             </div>
             <p className="text-[11px] text-navy-500 mt-4 flex items-center gap-1.5"><Clock size={12} /> ± 10 menit mengisi · verifikasi ≤ 24 jam · gratis</p>
           </motion.div>
@@ -143,10 +153,12 @@ export default function PelakuHome() {
       <section className="max-w-6xl mx-auto px-5 pt-8 pb-4">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {BENEFITS.map((b, i) => (
-            <motion.div key={b.t} {...rise(i * 0.06)} className="group bg-white border border-blue-200 rounded-2xl p-5 hover:-translate-y-1 hover:shadow-lg hover:shadow-navy-800/5 transition-all">
-              <span className="w-10 h-10 rounded-xl bg-navy-800 text-yellow-400 flex items-center justify-center transition-transform group-hover:-rotate-6"><b.icon size={18} /></span>
-              <p className="font-heading font-bold mt-3">{b.t}</p>
-              <p className="text-xs text-navy-500 mt-1 leading-relaxed">{b.d}</p>
+            <motion.div key={b.t} {...rise(i * 0.06)} className="group bg-white border border-blue-200 rounded-2xl p-4 sm:p-5 max-sm:flex max-sm:items-start max-sm:gap-3.5 hover:-translate-y-1 hover:shadow-lg hover:shadow-navy-800/5 transition-all">
+              <span className="w-10 h-10 shrink-0 rounded-xl bg-navy-800 text-yellow-400 flex items-center justify-center transition-transform group-hover:-rotate-6"><b.icon size={18} /></span>
+              <div className="min-w-0">
+                <p className="font-heading font-bold sm:mt-3">{b.t}</p>
+                <p className="text-xs text-navy-500 mt-1 leading-relaxed">{b.d}</p>
+              </div>
             </motion.div>
           ))}
         </div>

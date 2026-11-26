@@ -102,7 +102,7 @@ export default function Register() {
   const score = pwScore(form.password);
 
   return (
-    <div className="h-screen overflow-hidden bg-blue-100 bg-dots flex items-center justify-center p-4 font-body">
+    <div className="h-dvh overflow-hidden bg-blue-100 bg-dots flex items-center justify-center p-3 sm:p-4 font-body">
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -115,7 +115,7 @@ export default function Register() {
         />
 
         {/* form kanan */}
-        <div className="p-8 sm:p-10 flex flex-col justify-center overflow-y-auto no-scrollbar">
+        <div className="p-6 sm:p-10 flex flex-col [justify-content:safe_center] overflow-y-auto no-scrollbar">
           <BackButton
             fallback="/login"
             variant="ghost"
@@ -124,7 +124,7 @@ export default function Register() {
           />
           <Link to="/" className="flex items-center justify-center gap-2 font-heading font-extrabold text-xl text-navy-800">
             <span className="bg-navy-800 text-yellow-500 p-2 rounded-full"><MapPin size={18} /></span>
-            PesanLokal<span className="text-yellow-500">.</span>
+            <span>PesanLokal<span className="text-yellow-500">.</span></span>
           </Link>
           <h1 className="font-heading font-extrabold text-2xl sm:text-3xl text-navy-800 text-center mt-4">Buat Akun Baru</h1>
           <p className="text-navy-500 text-sm text-center mt-1.5">Satu akun untuk mencari & mendaftarkan usaha</p>
@@ -248,7 +248,7 @@ export default function Register() {
                         autoComplete="new-password"
                         className="w-full outline-none text-navy-800 placeholder:text-navy-500/50 bg-transparent text-sm"
                       />
-                      <button type="button" onClick={() => setShowPw((v) => !v)} className="text-navy-500 hover:text-navy-800 transition-colors shrink-0" aria-label="Tampilkan password">
+                      <button type="button" onClick={() => setShowPw((v) => !v)} className="text-navy-500 hover:text-navy-800 transition-colors shrink-0 p-2 -m-2 rounded-lg" aria-label="Tampilkan password">
                         {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </Field>
